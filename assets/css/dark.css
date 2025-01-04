@@ -1,0 +1,105 @@
+/* General reset for all widgets */
+* {
+    /*margin: 0;*/
+    /*padding: 0;*/
+    border: none;
+    box-shadow: none;
+    background: none; /* Ensure no backgrounds are applied unless explicitly set */
+    border-radius: 0; /* Remove all rounded corners */
+}
+
+/* Style for the main window */
+window {
+    background: #2e2e2e; /* Dark background for the entire app */
+    color: #ffffff; /* White text */
+}
+
+/* Frame styling */
+frame {
+    border: none; /* Default to no borders unless explicitly styled */
+    /*padding: 0; !* Remove internal padding *!*/
+    /*margin: 0; !* Remove external margins *!*/
+    background: none; /* Ensure the frame background doesn't conflict */
+}
+
+/* Top-left frame */
+frame:first-child {
+    border-bottom: 1px solid #000000; /* Bottom border for intersection with middle frames */
+    border-right: 1px solid #000000; /* Right border for intersection with right frames */
+}
+
+/* Top-right frame */
+frame:nth-child(2) {
+    border-bottom: 1px solid #000000; /* Bottom border for intersection with middle-right frame */
+    border-left: none; /* Avoid overlapping left border from left frames */
+}
+
+/* Bottom-left frame */
+frame:nth-last-child(2) {
+    border-top: none; /* Avoid overlapping borders at the top */
+    border-right: 1px solid #000000; /* Right border for intersection with bottom-right */
+    border-top: 1px solid #000000; /* Top border for intersection with middle frames */
+}
+
+/* Bottom-right frame */
+frame:last-child {
+    border-left: none; /* Prevent doubling with the left frame's right border */
+    border-top: 1px solid #000000; /* Top border to intersect with bottom-left frame */
+}
+
+/* Middle-left frame */
+frame:nth-child(3) {
+    border-bottom: 1px solid #000000; /* Bottom border to intersect with middle-bottom frame */
+    border-right: 1px solid #000000; /* Right border for intersection with middle-right frame */
+    border-top: none; /* Avoid overlapping top border */
+}
+
+/* Middle-right frame */
+frame:nth-child(4) {
+    border-left: none; /* Avoid overlapping left border */
+    border-bottom: 1px solid #000000; /* Bottom border for intersection */
+    border-top: none; /* Avoid overlapping top border */
+}
+
+/* Specifically handle left/right edges for splitting frames */
+grid > frame:first-child {
+    border-right: 1px solid #000000; /* Add right border between left and right sections */
+}
+
+grid > frame:last-child {
+    border-left: none; /* Ensure no double left border */
+}
+
+/* Frame content (children of frames) */
+frame > * {
+    /*margin: 0;*/
+    /*padding: 0;*/
+    background-color: #2e2e2e; /* Match frame content background to the window */
+}
+
+/* ScrolledWindow styling */
+scrolledwindow {
+    border: none; /* Remove border around scrolled windows */
+    padding: 0;
+    margin: 0;
+}
+
+/* Optional: If Paned is used for splitting */
+paned separator {
+    border: none; /* Remove any separator borders */
+    background: none;
+    min-width: 0;
+    min-height: 0;
+}
+
+/* Customize TextView sections */
+textview {
+    background: #3e3e3e; /* Consistent dark background */
+    color: #ffffff; /* White text for readability */
+    border: none; /* Remove TextView border */
+    padding: 5px;
+}
+
+textview:selected {
+    background: #505050; /* Slightly lighter gray for selected text */
+}
