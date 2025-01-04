@@ -1,6 +1,8 @@
 use gtk::{prelude::*, Frame, Label, ScrolledWindow, TextBuffer, TextView, WrapMode};
+use crate::ui::components::rhyme_search::RhymeSearch;
 use crate::ui::components::text_editor::TextEditor;
 
+mod rhyme_search;
 mod text_editor;
 
 pub fn create_section(label: &str, text_content: &str, editable: bool) -> Frame {
@@ -53,9 +55,8 @@ pub fn create_main_layout() -> gtk::Paned {
 
     // Vertical Center (Top and Bottom)
     let top_frame = TextEditor::new();
-    let bottom_frame =
-        create_section("Bottom Section", "This is the bottom section (2/5 height).", false);
-    let vertical_pane = crate::ui::layout::create_vertical_split(top_frame.get_widget(), &bottom_frame, 432);
+    let bottom_frame = RhymeSearch::new();
+    let vertical_pane = crate::ui::layout::create_vertical_split(top_frame.get_widget(), bottom_frame.get_widget(), 432);
 
     // Horizontal Split between Left and Center
     let left_and_center_pane =

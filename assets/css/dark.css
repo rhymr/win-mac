@@ -1,132 +1,196 @@
 /* General reset for all widgets */
 * {
-    /*margin: 0;*/
-    /*padding: 0;*/
     border: none;
     box-shadow: none;
-    background: none; /* Ensure no backgrounds are applied unless explicitly set */
-    border-radius: 0; /* Remove all rounded corners */
+    background: none;
+    border-radius: 0;
+    color: #ffffff;
+    font-family: Arial, sans-serif;
 }
 
-/* Style for the main window */
-window {
-    background: #2e2e2e; /* Dark background for the entire app */
-    color: #ffffff; /* White text */
+*::selection {
+    background-color: blue;
+    color: #ffffff;
 }
 
-/* Frame styling */
-frame {
-    border: none; /* Default to no borders unless explicitly styled */
-    /*padding: 0; !* Remove internal padding *!*/
-    /*margin: 0; !* Remove external margins *!*/
-    background: none; /* Ensure the frame background doesn't conflict */
+/* Styling for listbox labels */
+listbox label {
+    text-align: left;
+    padding: 5px;
+    color: #ffffff;
+    font-size: 14px;
+    word-wrap: break-word;
+    background-color: #3e3e3e;
 }
 
-/* Top-left frame */
-frame:first-child {
-    border-bottom: 1px solid #000000; /* Bottom border for intersection with middle frames */
-    border-right: 1px solid #000000; /* Right border for intersection with right frames */
+listbox {
+    background: #3e3e3e;
+    margin: 0;
+    padding: 0;
 }
 
-/* Top-right frame */
-frame:nth-child(2) {
-    border-bottom: 1px solid #000000; /* Bottom border for intersection with middle-right frame */
-    border-left: none; /* Avoid overlapping left border from left frames */
-}
-
-/* Bottom-left frame */
-frame:nth-last-child(2) {
-    border-top: none; /* Avoid overlapping borders at the top */
-    border-right: 1px solid #000000; /* Right border for intersection with bottom-right */
-    border-top: 1px solid #000000; /* Top border for intersection with middle frames */
-}
-
-/* Bottom-right frame */
-frame:last-child {
-    border-left: none; /* Prevent doubling with the left frame's right border */
-    border-top: 1px solid #000000; /* Top border to intersect with bottom-left frame */
-}
-
-/* Middle-left frame */
-frame:nth-child(3) {
-    border-bottom: 1px solid #000000; /* Bottom border to intersect with middle-bottom frame */
-    border-right: 1px solid #000000; /* Right border for intersection with middle-right frame */
-    border-top: none; /* Avoid overlapping top border */
-}
-
-/* Middle-right frame */
-frame:nth-child(4) {
-    border-left: none; /* Avoid overlapping left border */
-    border-bottom: 1px solid #000000; /* Bottom border for intersection */
-    border-top: none; /* Avoid overlapping top border */
-}
-
-/* Specifically handle left/right edges for splitting frames */
-grid > frame:first-child {
-    border-right: 1px solid #000000; /* Add right border between left and right sections */
-}
-
-grid > frame:last-child {
-    border-left: none; /* Ensure no double left border */
-}
-
-/* Frame content (children of frames) */
-frame > * {
-    /*margin: 0;*/
-    /*padding: 0;*/
-    background-color: #2e2e2e; /* Match frame content background to the window */
-}
-
-/* ScrolledWindow styling */
-scrolledwindow {
-    border: none; /* Remove border around scrolled windows */
+listbox > row {
     padding: 0;
     margin: 0;
 }
 
-/* Optional: If Paned is used for splitting */
+/* Main window styling */
+window {
+    background: #2e2e2e;
+    color: #ffffff;
+}
+
+/* Frame styling */
+frame {
+    border: none;
+    background: none;
+}
+
+/* Frame positioning and borders */
+frame:first-child {
+    border-bottom: 1px solid #000000;
+    border-right: 1px solid #000000;
+}
+
+frame:nth-child(2) {
+    border-bottom: 1px solid #000000;
+    border-left: none;
+}
+
+frame:nth-last-child(2) {
+    border-top: 1px solid #000000;
+    border-right: 1px solid #000000;
+}
+
+frame:last-child {
+    border-top: 1px solid #000000;
+    border-left: none;
+}
+
+frame:nth-child(3),
+frame:nth-child(4) {
+    border-bottom: 1px solid #000000;
+    border-top: none;
+}
+
+grid > frame:first-child {
+    border-right: 1px solid #000000;
+}
+
+grid > frame:last-child {
+    border-left: none;
+}
+
+frame > * {
+    background-color: #2e2e2e;
+}
+
+/* ScrolledWindow styling */
+scrolledwindow {
+    border: none;
+    margin: 0;
+    padding: 0;
+    background: transparent;
+}
+
+scrolledwindow > viewport {
+    margin: 0;
+    padding: 0;
+}
+
+/* Separator customization for Paned */
 paned separator {
-    border: none; /* Remove any separator borders */
+    border: none;
     background: none;
     min-width: 0;
     min-height: 0;
 }
 
-/* Customize TextView sections */
+/* TextView customization */
 textview {
-    background: #3e3e3e; /* Consistent dark background */
-    color: #ffffff; /* White text for readability */
-    border: none; /* Remove TextView border */
+    background: #3e3e3e;
+    color: #ffffff;
+    border: none;
     padding: 5px;
 }
 
-/* Code Editor Stuff */
+/* Entry (Text Input) widgets styling */
+entry {
+    background: #3e3e3e;
+    color: #ffffff;
+    border: 1px solid #5e5e5e;
+    margin: 0;
+    padding-left: 5px;
+}
 
+entry:focus {
+    border-color: #ffffff;
+    outline: none;
+    background: #484848;
+}
+
+/* Button widget styling */
+button {
+    background: #3e3e3e;
+    color: #ffffff;
+    border: 1px solid #5e5e5e;
+    padding: 0 15px;
+    margin: 0;
+    cursor: pointer;
+}
+
+button:hover {
+    background: #707070;
+    border-color: #cfcfcf;
+}
+
+button:active {
+    background: #484848;
+    border-color: #8e8e8e;
+}
+
+button:disabled {
+    background: #2c2c2c;
+    color: #8e8e8e;
+    border: 1px solid #3e3e3e;
+    cursor: not-allowed;
+}
+
+/* Box container styling */
 box {
+    background: #2e2e2e;
+    color: #ffffff;
     margin: 0;
-    padding: 0; /* Add padding as needed. */
-    border: none;
-}
-
-scrolledwindow {
-    border: none;
     padding: 0;
-    margin: 0;
+    border: none;
+    border-radius: 0;
 }
 
+box.rhyme-search-container-bg {
+    background: #1e1e1e;
+}
+
+box.rhyme-search-container-margin {
+    margin: 0 5px 5px;
+}
+
+frame.rhyme-search-container {
+    background: #1e1e1e;
+}
+
+/* Customized gutter */
 .gutter {
     min-width: 40px;
-    padding-top: 5px;
-    padding-right: 2px;
-    padding-left: 2px;
+    padding: 5px 2px 0;
     border: none;
     background-color: #3e3e3e;
-    border-right: 2px solid #000000; /* Optional */
+    border-right: 2px solid #000000;
     font-family: monospace;
     margin: 0;
 }
 
-::-moz-selection { /* Code for Firefox */
+/* Selection customization */
+::-moz-selection {
     color: white;
     background: cornflowerblue;
 }
@@ -134,4 +198,44 @@ scrolledwindow {
 ::selection {
     color: white;
     background: cornflowerblue;
+}
+
+/* Additional styling */
+frame > label {
+    padding: 5px;
+    background-color: #2e2e2e;
+}
+
+/* Update the ListBox styling */
+.rhyme-results {
+    background-color: #3e3e3e;
+    margin: 0;
+    padding: 0;
+}
+
+.rhyme-results > row {
+    padding: 0;
+    margin: 0;
+    background-color: #3e3e3e;
+}
+
+/* Make the header styling more specific */
+.rhyme-results .syllable-header {
+    /*color: #aaaaaa !important;*/
+    /*font-size: 16px !important;*/
+    /*font-weight: bold !important;*/
+    /*padding: 8px !important;*/
+    background-color: #3e3e3e !important;
+    /*text-align: left !important;*/
+    padding-bottom: 5px !important;
+}
+
+/* Style the word labels */
+.rhyme-results label {
+    /*text-align: left;*/
+    /*padding: 5px;*/
+    /*color: #ffffff;*/
+    /*font-size: 14px;*/
+    word-wrap: break-word;
+    background-color: #3e3e3e;
 }
