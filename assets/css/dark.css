@@ -241,6 +241,22 @@ frame > label {
 }
 
 /* Workspace styling */
+.tab-close-button {
+    padding: 0 0 0 5px;
+    margin: 0;
+    background: none;
+    border: none;
+}
+
+.tab-close-button:hover {
+    padding: 0 0 0 5px;
+    margin: 0;
+    background: none;
+    border: none;
+    color: #ff0000;
+}
+
+
 .workspace-frame {
     border: none;
 }
@@ -248,6 +264,7 @@ frame > label {
 .workspace-notebook tab {
     /*border: 1px solid black;*/
     /*border-radius: 4px 4px 0 0;*/
+    /*background-color: #3e3e3e;*/
 }
 
 .workspace-notebook {
@@ -256,8 +273,12 @@ frame > label {
     margin: 0;
 }
 
+.tab-box {
+    background: none;
+}
+
 .workspace-notebook tab:checked {
-    background-color: #4e4e4e;
+    background-color: #3e3e3e;
 }
 
 .workspace-notebook tab label {
@@ -294,7 +315,6 @@ frame > label {
 /* Notebook (tabbed interface) styling */
 notebook {
     background-color: #1e1e1e;
-    /*padding: 5px;*/
 }
 
 notebook > textview {
@@ -302,15 +322,11 @@ notebook > textview {
 }
 
 notebook > stack {
-    /*border-left: 3px solid #1e1e1e;*/
-    /*border-right: 5px solid #1e1e1e;*/
-    /*border-bottom: 5px solid #1e1e1e;*/
     background-color: #1e1e1e;
 }
 
 notebook > header {
     background-color: #1e1e1e;
-    border-bottom: none;
     padding: 0;
     margin: 0;
 }
@@ -322,13 +338,25 @@ notebook > header > tabs {
 notebook > header > tabs > tab {
     background-color: #2e2e2e;
     padding: 4px 8px;
-    border: 1px solid #1e1e1e;
+    border: 1px solid black;
     margin: 0;
 }
 
 notebook > header > tabs > tab:checked {
-    background-color: #3e3e3e;
+    background-color: #4e4e4e;
     border-bottom: none;
+    font-weight: bold;
+    color: #ffffff;
+    border: 1px solid black;
+}
+
+notebook > header > tabs > tab:checked > label {
+    color: #ffffff;
+    background-color: #4e4e4e;
+}
+
+notebook > header > tabs > tab:hover {
+    background-color: #3e3e3e;
 }
 
 notebook > header > tabs > tab label {
