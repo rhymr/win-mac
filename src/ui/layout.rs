@@ -1,5 +1,9 @@
 use gtk::prelude::*;
 use gtk::{Application, Orientation, Paned};
+use crate::ui::workspace_controller::WorkspaceController;
+use std::rc::Rc;
+use crate::ui::comps::rhyme_search::RhymeSearch;
+use crate::ui::comps::workspace::Workspace;
 
 pub fn build_ui(app: &Application) {
     let css_provider = crate::ui::css::load_css("assets/css/dark.css");
@@ -12,10 +16,32 @@ pub fn build_ui(app: &Application) {
         .default_height(720)
         .build();
 
-    let main_layout = crate::ui::components::create_main_layout();
+    let (main_layout, workspace_controller) = create_main_layout();
     main_window.set_child(Some(&main_layout));
 
+    crate::ui::menu::setup_menu(app, workspace_controller);
     main_window.present();
+}
+
+pub fn create_main_layout() -> (gtk::Paned, Rc<WorkspaceController>) {
+    // Left Section
+    let left_frame = crate::ui::components::create_label_section("Navigation", "Left Section: Navigation");
+
+    // Right Section
+    let right_frame = crate::ui::components::create_label_section("Inspector / Details", "Right Section: Inspector/Details");
+
+    // Vertical Center (Top and Bottom)
+    let workspace = Workspace::new();
+    let workspace_controller = Rc::new(WorkspaceController::new(workspace));
+    
+    let bottom_frame = RhymeSearch::new();
+    let vertical_pane = create_vertical_split(workspace_controller.workspace.get_widget(), bottom_frame.get_widget(), 432);
+
+    // Horizontal Split between Left and Center
+    let left_and_center_pane = create_horizontal_split(&left_frame, &vertical_pane, 320);
+
+    // Create the final horizontal split
+    (create_horizontal_split(&left_and_center_pane, &right_frame, 960), workspace_controller)
 }
 
 pub fn create_horizontal_split(

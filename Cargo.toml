@@ -8,14 +8,33 @@ gtk = { version = "0.9.5", package = "gtk4", features = ["v4_12"] }
 glib = "0.20.7"
 tokio = { version = "1.42.0", features = ["full"] }
 datamuse-api-rs = "2.1.0"
+futures-channel = "0.3"
+futures-util = "0.3.31"
+bitbar = "0.5.0"
 
 [package.metadata.bundle]
-name = "Rhymr" # The name of your app as displayed in macOS
-identifier = "app.rhymr.macos" # Unique identifier for your app
-icon = "assets/icon.icns" # Path to your app's icon in `.icns` format (important for macOS)
+name = "Rhymr"
+identifier = "app.rhymr.macos"
+icon = "assets/icon.icns"
+version = "0.1.0"
+copyright = "Copyright (c) 2024 Your Name"
+category = "public.app-category.productivity"
+short_description = "A rhyming and text editor application"
+long_description = """
+Rhymr is a text editor with integrated rhyming capabilities,
+helping writers and poets find the perfect rhymes for their work.
+"""
 
 [package.metadata.bundle.macos]
-frameworks = [] # List macOS frameworks to link, if applicable
+frameworks = []
+minimum_system_version = "10.13"
+license = "MIT"
 
-[package.metadata.bundle.mac.dmg]
-#background = "assets/background.png" # Path to the background image for the DMG
+[package.metadata.bundle.macos.document_types]
+extensions = ["txt", "md", "rs"]
+name = "Text Document"
+role = "Editor"
+icon = "assets/doc-icon.icns"
+
+[package.metadata.bundle.macos.capabilities]
+file_access = ["user-selected"]

@@ -4,6 +4,7 @@ use gtk::glib;
 const APP_ID: &str = "Rhymr";
 
 mod ui;
+mod utils;
 
 fn main() -> glib::ExitCode {
     let gtk_id = format!("org.gtk_rs.{}", APP_ID.to_lowercase());
