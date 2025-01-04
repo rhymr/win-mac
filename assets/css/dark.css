@@ -100,6 +100,38 @@ textview {
     padding: 5px;
 }
 
-textview:selected {
-    background: #505050; /* Slightly lighter gray for selected text */
+/* Code Editor Stuff */
+
+box {
+    margin: 0;
+    padding: 0; /* Add padding as needed. */
+    border: none;
+}
+
+scrolledwindow {
+    border: none;
+    padding: 0;
+    margin: 0;
+}
+
+.gutter {
+    min-width: 40px;
+    padding-top: 5px;
+    padding-right: 2px;
+    padding-left: 2px;
+    border: none;
+    background-color: #3e3e3e;
+    border-right: 2px solid #000000; /* Optional */
+    font-family: monospace;
+    margin: 0;
+}
+
+::-moz-selection { /* Code for Firefox */
+    color: white;
+    background: cornflowerblue;
+}
+
+::selection {
+    color: white;
+    background: cornflowerblue;
 }

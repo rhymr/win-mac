@@ -1,4 +1,7 @@
-use gtk::{prelude::*, Label, Frame, ScrolledWindow, TextBuffer, TextView};
+use gtk::{prelude::*, Frame, Label, ScrolledWindow, TextBuffer, TextView, WrapMode};
+use crate::ui::components::text_editor::TextEditor;
+
+mod text_editor;
 
 pub fn create_section(label: &str, text_content: &str, editable: bool) -> Frame {
     // Create a TextBuffer
@@ -8,7 +11,7 @@ pub fn create_section(label: &str, text_content: &str, editable: bool) -> Frame 
     let text_view = TextView::builder()
         .editable(editable)
         .cursor_visible(editable)
-        .wrap_mode(gtk::WrapMode::Word)
+        .wrap_mode(WrapMode::Word)
         .build();
     text_view.set_buffer(Some(&text_buffer));
 
@@ -49,10 +52,10 @@ pub fn create_main_layout() -> gtk::Paned {
     let right_frame = create_label_section("Inspector / Details", "Right Section: Inspector/Details");
 
     // Vertical Center (Top and Bottom)
-    let top_frame = create_section("Top Section", "This is the top section (3/5 height).", false);
+    let top_frame = TextEditor::new();
     let bottom_frame =
         create_section("Bottom Section", "This is the bottom section (2/5 height).", false);
-    let vertical_pane = crate::ui::layout::create_vertical_split(&top_frame, &bottom_frame, 432);
+    let vertical_pane = crate::ui::layout::create_vertical_split(top_frame.get_widget(), &bottom_frame, 432);
 
     // Horizontal Split between Left and Center
     let left_and_center_pane =

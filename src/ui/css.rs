@@ -1,10 +1,13 @@
 use gtk::{CssProvider, gdk};
+use gtk::glib::Bytes;
 
 pub fn load_css(file_path: &str) -> CssProvider {
     let css_provider = CssProvider::new();
 
-    if let Ok(data) = std::fs::read_to_string(file_path) {
-        css_provider.load_from_data(&data);
+    // Read the file as raw bytes, NOT as a string
+    if let Ok(data) = std::fs::read(file_path) {
+        css_provider
+            .load_from_bytes(&Bytes::from_owned(data));
     } else {
         eprintln!("CSS file not found: {}", file_path);
     }
