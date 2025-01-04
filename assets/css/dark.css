@@ -176,6 +176,8 @@ box.rhyme-search-container-margin {
 
 frame.rhyme-search-container {
     background: #1e1e1e;
+    border-right: 1px solid #000000;
+    border-bottom: 2px solid #000000; /*2px bc windows hide 1px at the bottom idk*/
 }
 
 /* Customized gutter */
@@ -304,7 +306,8 @@ frame > label {
 .suggested-action {
     background-color: #2b5278;
     color: white;
-    padding: 8px 15px;
+    padding: 8px 16px;
+    border: 1px solid #000000;
     border-radius: 4px;
 }
 

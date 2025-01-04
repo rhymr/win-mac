@@ -24,4 +24,7 @@ Cargo.lock
 *.rlib
 
 # Ignore artifacts of testing
-/tests_output/
+/node_modules/
+/.husky/
+/package-lock.json
+.DS_Store
