@@ -1,0 +1,27 @@
+# Ignore the target directory, where compiled files are stored
+/target
+
+# Ignore intermediate files created by Cargo
+**/*.rs.bk
+/.cargo
+/.rustup
+*.log
+
+# Ignoring debug or release builds
+/target/debug
+/target/release
+
+# Ignoring Rust-specific tools and configs
+/.idea
+/.vscode
+*.iml
+
+# Exclude build artifacts, lock files, and binaries
+Cargo.lock
+*.dylib
+*.so
+*.dll
+*.rlib
+
+# Ignore artifacts of testing
+/tests_output/
