@@ -15,19 +15,20 @@ jobs:
           sudo apt update
           sudo apt install -y sudo
           sudo apt install -y git curl
-          curl -sL https://deb.nodesource.com/setup_14.x | sudo -E bash -
+          curl -sL https://deb.nodesource.com/setup_20.x | sudo -E bash -
           sudo DEBIAN_FRONTEND=noninteractive apt install -y nodejs
-          
-      - name: Print versions
-        run: |
-          git --version
-          node --version
-          npm --version
-          npx commitlint --version
+
       - name: Install commitlint
         run: |
           npm install conventional-changelog-conventionalcommits
           npm install commitlint@latest
+          
+      - name: Print versions
+        run: |
+          echo "git: $(git --version)"
+          echo "node: $(node --version)"
+          echo "npm: $(npm --version)"
+          echo "commitlint: $(npx commitlint --version)"
 
       - name: Validate current commit (last commit) with commitlint
         if: github.event_name == 'push'
