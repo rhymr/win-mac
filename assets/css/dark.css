@@ -48,7 +48,7 @@ frame {
 
 /* Frame positioning and borders */
 frame:first-child {
-    border-bottom: 1px solid #000000;
+    /*border-bottom: 1px solid #000000;*/
     border-right: 1px solid #000000;
 }
 
@@ -69,7 +69,7 @@ frame:last-child {
 
 frame:nth-child(3),
 frame:nth-child(4) {
-    border-bottom: 1px solid #000000;
+    border-right: 1px solid #000000;
     border-top: none;
 }
 
@@ -176,8 +176,8 @@ box.rhyme-search-container-margin {
 
 frame.rhyme-search-container {
     background: #1e1e1e;
+    border-top: 1px solid #000000;
     border-right: 1px solid #000000;
-    border-bottom: 2px solid #000000; /*2px bc windows hide 1px at the bottom idk*/
 }
 
 /* Customized gutter */
@@ -364,4 +364,55 @@ notebook > header > tabs > tab:hover {
 
 notebook > header > tabs > tab label {
     color: #ffffff;
+}
+
+/* Add these rules to your CSS file */
+listbox > row:hover {
+    background-color: #4e4e4e;
+}
+
+listbox > row {
+    padding: 2px 4px;
+}
+
+/* Add or update the file icon styling */
+.file-icon {
+    color: #e1e1e1;
+    padding-left: 8px;
+    min-width: 16px;
+    min-height: 16px;
+}
+
+.file-tree-container label {
+    padding: 5px;
+    text-align: left;
+    background-color: #1e1e1e;
+}
+
+.file-list label {
+    background: none;
+}
+
+.file-list image {
+    background: none;
+}
+
+
+/* Ensure the icon container has proper sizing */
+.file-list image {
+    -gtk-icon-size: 16px;
+}
+
+/* Status bar styling */
+.status-bar {
+    background-color: #1e1e1e;
+    border-top: 1px solid #000000;
+    min-height: 24px;
+    padding: 0 8px 2px;
+}
+
+.status-text {
+    color: #e1e1e1;
+    font-size: 12px;
+    padding: 4px 0;
 }

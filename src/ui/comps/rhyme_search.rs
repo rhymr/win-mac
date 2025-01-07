@@ -3,6 +3,7 @@ use datamuse_api_rs::{DatamuseClient, EndPoint, RelatedType, Vocabulary};
 use gtk::prelude::*;
 use gtk::{Frame, Button, Entry, Label, ListBox, Orientation, ScrolledWindow, Box, pango};
 use tokio::runtime::Runtime;
+use std::collections::HashMap;
 
 pub struct RhymeSearch {
     frame: Frame,
@@ -131,14 +132,14 @@ impl RhymeSearch {
         entry_for_activate.connect_activate(move |entry| {
             let text = entry.text();
             handle_submit_activate(text.as_str());
-            entry.set_text("");
+            // entry.set_text("");
         });
 
         // Handle clicking the submit button
         submit_button.connect_clicked(move |_| {
             let text = entry_for_submit.text();
             handle_submit_button(text.as_str());
-            entry_for_submit.set_text("");
+            // entry_for_submit.set_text("");
         });
 
         // Create the container layout
@@ -166,28 +167,34 @@ fn fetch_rhymes(word: &str) -> Vec<(String, usize)> {
 
     rt.block_on(async {
         let client = DatamuseClient::new();
-        let request = client
-            .new_query(Vocabulary::EnglishWiki, EndPoint::Words)
-            .related(RelatedType::Rhyme, word);
-            // .max_results(50); // Add a limit to avoid overflow
 
-        match request.list().await {
-            Ok(word_list) => {
-                // Collect words with their syllable counts
-                word_list
-                    .into_iter()
-                    .filter_map(|word_data| {
+        // TODO: Let user filter types in their results
+        // Create a vector to hold all requests
+        let requests = vec![
+            client.new_query(Vocabulary::EnglishWiki, EndPoint::Words).related(RelatedType::Rhyme, word),
+            client.new_query(Vocabulary::EnglishWiki, EndPoint::Words).related(RelatedType::ApproximateRhyme, word),
+            client.new_query(Vocabulary::EnglishWiki, EndPoint::Words).related(RelatedType::Homophones, word),
+            client.new_query(Vocabulary::EnglishWiki, EndPoint::Words).sounds_like(word),
+        ];
+
+        let mut unique_words: HashMap<String, usize> = HashMap::new(); // Use a HashMap to store unique words
+
+        for request in requests {
+            match request.list().await {
+                Ok(word_list) => {
+                    for word_data in word_list {
                         let word = word_data.word;
                         let syllables = word_data.num_syllables.unwrap_or(0); // Assume API provides `syllables`
                         if syllables > 0 {
-                            Some((word, syllables))
-                        } else {
-                            None
+                            unique_words.insert(word, syllables); // Insert into HashMap
                         }
-                    })
-                    .collect()
+                    }
+                }
+                Err(_) => continue, // Ignore errors and continue with the next request
             }
-            Err(_) => vec![("No rhymes found".to_string(), 0)],
         }
+
+        // Convert HashMap back to Vec
+        unique_words.into_iter().collect::<Vec<(String, usize)>>()
     })
 }

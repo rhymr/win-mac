@@ -1,14 +1,14 @@
-use gtk::prelude::*;
-use gtk::{Application, Frame, Orientation, Paned, ScrolledWindow, TextBuffer, TextView, WrapMode};
-use crate::ui::workspace_controller::WorkspaceController;
-use std::rc::Rc;
+use crate::ui::comps::file_tree::FileTree;
 use crate::ui::comps::rhyme_search::RhymeSearch;
 use crate::ui::comps::workspace::Workspace;
-use std::cell::RefCell;
+use crate::ui::workspace_controller::WorkspaceController;
+use crate::APP_ID;
+use gtk::prelude::*;
+use gtk::{Application, Box as GtkBox, Frame, Label, Orientation, Paned, ScrolledWindow, TextBuffer, TextView, WrapMode};
+use std::rc::Rc;
 
-pub fn build_ui(app: &Application) {
+pub fn build_ui(app: &Application) -> (gtk::ApplicationWindow, Rc<WorkspaceController>) {
     let css_provider = crate::ui::css::load_css("assets/css/dark.css");
-
     crate::ui::css::apply_css_to_app(&css_provider);
 
     let main_window = gtk::ApplicationWindow::builder()
@@ -19,43 +19,79 @@ pub fn build_ui(app: &Application) {
         .build();
 
     let (main_layout, workspace_controller) = create_main_layout();
+    
+    // Store the workspace controller in the window's data safely
+    unsafe {
+        main_window.set_data("workspace_controller", workspace_controller.clone());
+    }
 
     main_window.set_child(Some(&main_layout));
 
-    crate::ui::menu::setup_menu(app, workspace_controller);
+    crate::ui::menu::setup_menu(app, workspace_controller.clone());
 
     main_window.present();
+    
+    (main_window, workspace_controller)
 }
 
-pub fn create_main_layout() -> (gtk::Paned, Rc<WorkspaceController>) {
-    // Left Section
-    let left_frame = create_label_section("Navigation", "Left Section: Navigation");
-
-    // Right Section
-    let right_frame = create_label_section("Inspector / Details", "Right Section: Inspector/Details");
-
-    // Create the workspace first
+pub fn create_main_layout() -> (GtkBox, Rc<WorkspaceController>) {
+    // Create the workspace controller
     let workspace_controller = Rc::new(WorkspaceController::new());
 
-    let mut workspace = Rc::new(Workspace::new(Rc::clone(&workspace_controller)));
+    // Create main vertical box to hold everything
+    let main_box = GtkBox::new(Orientation::Vertical, 0);
 
-    // Set the controller in the workspace
-    if let Some(workspace_mut) = Rc::get_mut(&mut workspace) {
-        workspace_mut.set_controller(Rc::clone(&workspace_controller));
-    }
-    workspace_controller.set_workspace(Rc::clone(&workspace));
+    // Create the main content area (existing paned layout)
+    let (content_pane, _file_tree, _workspace) = create_content_layout(&workspace_controller);
+    main_box.append(&content_pane);
 
-    // Vertical Center (Top and Bottom)
+    // Create the status bar
+    let status_bar = create_status_bar();
+    main_box.append(&status_bar);
+
+    (main_box, workspace_controller)
+}
+
+fn create_status_bar() -> GtkBox {
+    let status_bar = GtkBox::builder()
+        .orientation(Orientation::Horizontal)
+        .css_classes(vec!["status-bar"])
+        .build();
+    
+    // Add some sample content to the status bar
+    let status_label = Label::new(Some(APP_ID));
+    status_label.set_css_classes(&["status-text"]);
+    status_bar.append(&status_label);
+
+    status_bar
+}
+
+// Move existing paned layout creation to a new function
+fn create_content_layout(workspace_controller: &Rc<WorkspaceController>) -> (Paned, FileTree, Rc<Workspace>) {
+    // Create the FileTree component with open files
+    let open_files = Vec::new();
+    let file_tree = FileTree::new(open_files.clone());
+
+    // Create the Workspace instance with the FileTree
+    let workspace = Rc::new(Workspace::new(
+        Rc::clone(workspace_controller),
+        Some(file_tree.clone())
+    ));
+
+    workspace_controller.set_workspace(workspace.clone());
+
+    // Create the bottom frame
     let bottom_frame = RhymeSearch::new();
     let vertical_pane = create_vertical_split(workspace.get_widget(), bottom_frame.get_widget(), 432);
 
-    // Horizontal Split between Left and Center
-    let left_and_center_pane = create_horizontal_split(&left_frame, &vertical_pane, 320);
+    // Horizontal Split between File Tree and Center
+    let left_and_center_pane = create_horizontal_split(file_tree.get_widget(), &vertical_pane, 320);
 
     // Create the final horizontal split
-    let final_split = Rc::new(create_horizontal_split(&left_and_center_pane, &right_frame, 960));
+    let right_frame = create_label_section("Right", "Description");
+    let final_split = create_horizontal_split(&left_and_center_pane, &right_frame, 960);
 
-    (final_split.as_ref().clone(), workspace_controller)
+    (final_split, file_tree, workspace)
 }
 
 pub fn create_horizontal_split(

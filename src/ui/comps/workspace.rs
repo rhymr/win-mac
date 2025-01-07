@@ -5,16 +5,18 @@ use gtk::{Box, Button, Frame, Label, Notebook, ScrolledWindow, TextBuffer, TextV
 use std::cell::RefCell;
 use std::path::{Path, PathBuf};
 use std::rc::Rc;
+use crate::ui::comps::file_tree::FileTree;
 
 pub struct Workspace {
     frame: Frame,
     pub(crate) notebook: Notebook,
     pub(crate) open_files: Rc<RefCell<Vec<PathBuf>>>,
     controller: Rc<WorkspaceController>,
+    pub(crate) file_tree: Option<FileTree>,
 }
 
 impl Workspace {
-    pub fn new(controller: Rc<WorkspaceController>) -> Self {
+    pub fn new(controller: Rc<WorkspaceController>, file_tree: Option<FileTree>) -> Self {
         // Create notebook (tabbed interface)
         let notebook = Notebook::builder()
             .scrollable(true)
@@ -32,6 +34,7 @@ impl Workspace {
             notebook: notebook.clone(),
             open_files: open_files.clone(),
             controller,
+            file_tree,
         };
 
         // Check if there are no open files and display the empty state
@@ -63,6 +66,16 @@ impl Workspace {
         let controller = self.controller.clone();
         add_new_tab(&self.notebook, path, content, Some(controller));
         self.open_files.borrow_mut().push(path.to_path_buf());
+
+        // Update the file tree
+        if let Some(ref file_tree) = self.file_tree {
+            let open_files = self.get_open_files();
+            file_tree.update_file_list(open_files);
+        }
+        
+        // Ensure notebook shows tabs and has proper styling
+        self.notebook.set_show_tabs(true);
+        self.notebook.add_css_class("has-open-files");
     }
 
     pub fn get_current_buffer(&self) -> Option<(TextBuffer, Option<PathBuf>)> {
@@ -130,7 +143,7 @@ impl Workspace {
             .build();
 
         let empty_label = Label::builder()
-            .label("No files open")
+            .label("No files are open")
             .css_classes(vec!["empty-state-label"])
             .build();
 
@@ -154,26 +167,31 @@ impl Workspace {
         // Clone the Rc pointers to avoid borrowing issues
         let controller_ref = self.controller.clone();
 
-        new_button.connect_clicked(move |_| {
-            // Ensure the controller is used to create a new file
-            if let Some(controller) = Some(controller_ref.clone()) {
-                controller.handle_new_file(None);
-            }
+        new_button.connect_clicked(move |button| {
+            controller_ref.handle_new_file();
         });
 
         let notebook_ref = self.notebook.clone();
         let open_files_ref = self.open_files.clone();
         let controller_ref = self.controller.clone();
 
-        open_button.connect_clicked(move |_| {
-            if let Some((path, content)) = FileOps::open_file(None) {
-                if notebook_ref.n_pages() == 1 && open_files_ref.borrow().is_empty() {
-                    notebook_ref.remove_page(Some(0));
+        open_button.connect_clicked(move |button| {
+            if let Some(window) = button.root().and_downcast::<Window>() {
+                if let Some((path, content)) = FileOps::open_file(Some(window.clone())) {
+                    if notebook_ref.n_pages() == 1 && open_files_ref.borrow().is_empty() {
+                        notebook_ref.remove_page(Some(0));
+                    }
+                    add_new_tab(&notebook_ref, &*path, &*content, Some(controller_ref.clone()));
+                    open_files_ref.borrow_mut().push(path);
+                    
+                    // Update file tree here after adding the tab
+                    if let Some(workspace) = controller_ref.get_workspace() {
+                        if let Some(ref file_tree) = workspace.file_tree {
+                            let open_files = workspace.get_open_files();
+                            file_tree.update_file_list(open_files);
+                        }
+                    }
                 }
-                if let Some(controller) = Some(controller_ref.clone()) {
-                    add_new_tab(&notebook_ref, &*path, &*content, Some(controller));
-                }
-                open_files_ref.borrow_mut().push(path);
             }
         });
 
@@ -183,6 +201,32 @@ impl Workspace {
         empty_state.append(&button_box);
 
         empty_state
+    }
+
+    pub fn get_open_files(&self) -> Vec<String> {
+        self.open_files.borrow().iter()
+            .filter_map(|path| path.file_name().and_then(|name| name.to_str()).map(|s| s.to_string()))
+            .collect()
+    }
+
+    pub fn remove_tab(&self, index: usize) {
+        // Remove the tab
+        self.notebook.remove_page(Some(index as u32));
+        self.open_files.borrow_mut().remove(index);
+        
+        // Show empty state if no more tabs
+        if self.notebook.n_pages() <= 0 {
+            self.notebook.remove_css_class("has-open-files");
+            let empty_state = self.create_empty_state();
+            self.notebook.append_page(&empty_state, Option::<&gtk::Widget>::None);
+            self.notebook.set_show_tabs(false);
+        }
+
+        // Update the file tree
+        if let Some(ref file_tree) = self.file_tree {
+            let open_files = self.get_open_files();
+            file_tree.update_file_list(open_files);
+        }
     }
 }
 
@@ -232,7 +276,7 @@ fn add_new_tab(notebook: &Notebook, path: &Path, content: &str, controller: Opti
 
     // Connect close button signal
     if let Some(controller) = controller {
-        close_button.connect_clicked(glib::clone!(@strong controller => move |button| {
+        close_button.connect_clicked(move |button| {
             // Get the application window from the button's toplevel
             if let Some(window) = button.root().and_downcast::<Window>() {
                 controller.handle_close_tab(&window);
@@ -240,11 +284,12 @@ fn add_new_tab(notebook: &Notebook, path: &Path, content: &str, controller: Opti
             } else {
                 println!("Error: Could not get window from button");
             }
-        }));
+        });
     } else {
         println!("No controller available");
     }
 
     notebook.set_show_tabs(true);
+    notebook.add_css_class("has-open-files");
     notebook.set_current_page(Some(page_num));
 } 

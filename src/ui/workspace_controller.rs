@@ -4,6 +4,7 @@ use crate::utils::file_ops::FileOps;
 use gtk::prelude::*;
 use gtk::Window;
 use std::rc::Rc;
+use std::path::PathBuf;
 
 pub struct WorkspaceController {
     pub(crate) workspace: RefCell<Option<Rc<Workspace>>>,
@@ -25,17 +26,29 @@ impl WorkspaceController {
         self.workspace.borrow().clone()
     }
 
-    pub fn handle_new_file(&self, _window: Option<&Window>) {
+    pub fn handle_new_file(&self) {
         if let Some(workspace) = self.get_workspace() {
             let (path, content) = FileOps::new_file();
             workspace.add_new_tab(&path, &content);
+            
+            // Update the file tree after adding new file
+            let open_files = workspace.get_open_files();
+            if let Some(ref file_tree) = workspace.file_tree {
+                file_tree.update_file_list(open_files);
+            }
         }
     }
 
     pub fn handle_open_file(&self, window: &Window) {
-        if let Some(workspace) = self.get_workspace() {
-            if let Some((path, content)) = FileOps::open_file(Some(window.clone())) {
+        if let Some((path, content)) = FileOps::open_file(Some(window.clone())) {
+            if let Some(workspace) = self.workspace.borrow().as_ref() {
                 workspace.add_new_tab(&path, &content);
+                
+                // Update the file tree after opening the file
+                let open_files = workspace.get_open_files();
+                if let Some(ref file_tree) = workspace.file_tree {
+                    file_tree.update_file_list(open_files);
+                }
             }
         }
     }
@@ -69,17 +82,22 @@ impl WorkspaceController {
     pub fn handle_close_tab(&self, _window: &Window) {
         if let Some(workspace) = self.get_workspace() {
             if let Some(current_page) = workspace.notebook.current_page() {
-                let notebook = &workspace.notebook;
-                
-                notebook.remove_page(Some(current_page));
-                workspace.open_files.borrow_mut().remove(current_page as usize);
-                
-                // Show empty state if no more tabs
-                if notebook.n_pages() <= 0 {
-                    notebook.remove_css_class("has-open-files");
-                    let empty_state = workspace.create_empty_state();
-                    notebook.append_page(&empty_state, Option::<&gtk::Widget>::None);
-                    notebook.set_show_tabs(false);
+                workspace.remove_tab(current_page as usize);
+            }
+        }
+    }
+
+    pub fn open_file(&self, file: &gio::File, window: Option<&impl IsA<gtk::Window>>) {
+        if let Some(path) = file.path() {
+            if let Ok(contents) = std::fs::read_to_string(&path) {
+                if let Some(workspace) = self.workspace.borrow().as_ref() {
+                    workspace.add_new_tab(&path, &contents);
+                    
+                    // Update the file tree
+                    let open_files = workspace.get_open_files();
+                    if let Some(ref file_tree) = workspace.file_tree {
+                        file_tree.update_file_list(open_files);
+                    }
                 }
             }
         }

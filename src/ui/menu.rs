@@ -19,14 +19,9 @@ pub fn setup_menu(app: &Application, workspace_controller: Rc<WorkspaceControlle
 
     // New file action
     let controller = workspace_controller.clone();
-    let app_weak = app.downgrade();
     let new_action = gio::SimpleAction::new("new", None);
     new_action.connect_activate(move |_, _| {
-        if let Some(app) = app_weak.upgrade() {
-            if let Some(window) = app.active_window() {
-                controller.handle_new_file(Some(&window));
-            }
-        }
+        controller.handle_new_file();
     });
     app.add_action(&new_action);
 

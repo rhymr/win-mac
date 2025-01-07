@@ -10,6 +10,8 @@ tokio = { version = "1.42.0", features = ["full"] }
 datamuse-api-rs = "2.1.0"
 futures-channel = "0.3"
 futures-util = "0.3.31"
+gdk-pixbuf = "0.20.7"
+gio = "0.20.7"
 
 [package.metadata.bundle]
 name = "Rhymr"
@@ -37,3 +39,6 @@ icon = "assets/doc-icon.icns"
 
 [package.metadata.bundle.macos.capabilities]
 file_access = ["user-selected"]
+
+[build-dependencies]
+glib-build-tools = "0.20.0"
