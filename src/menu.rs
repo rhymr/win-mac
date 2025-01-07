@@ -1,8 +1,7 @@
 use gtk::prelude::*;
 use gtk::{gio, Application};
-
-use crate::ui::workspace_controller::WorkspaceController;
 use std::rc::Rc;
+use crate::workspace::workspace_controller::WorkspaceController;
 
 pub fn setup_menu(app: &Application, workspace_controller: Rc<WorkspaceController>) {
     let file_menu = gio::Menu::new();

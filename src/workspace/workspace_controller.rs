@@ -1,10 +1,9 @@
-use std::cell::RefCell;
-use crate::ui::comps::workspace::Workspace;
 use crate::utils::file_ops::FileOps;
 use gtk::prelude::*;
 use gtk::Window;
+use std::cell::RefCell;
 use std::rc::Rc;
-use std::path::PathBuf;
+use crate::workspace::workspace::Workspace;
 
 pub struct WorkspaceController {
     pub(crate) workspace: RefCell<Option<Rc<Workspace>>>,
@@ -83,22 +82,6 @@ impl WorkspaceController {
         if let Some(workspace) = self.get_workspace() {
             if let Some(current_page) = workspace.notebook.current_page() {
                 workspace.remove_tab(current_page as usize);
-            }
-        }
-    }
-
-    pub fn open_file(&self, file: &gio::File, window: Option<&impl IsA<gtk::Window>>) {
-        if let Some(path) = file.path() {
-            if let Ok(contents) = std::fs::read_to_string(&path) {
-                if let Some(workspace) = self.workspace.borrow().as_ref() {
-                    workspace.add_new_tab(&path, &contents);
-                    
-                    // Update the file tree
-                    let open_files = workspace.get_open_files();
-                    if let Some(ref file_tree) = workspace.file_tree {
-                        file_tree.update_file_list(open_files);
-                    }
-                }
             }
         }
     }

@@ -1,12 +1,9 @@
 use gio::Resource;
 use gtk::prelude::*;
 use gtk::{gio, glib};
-use crate::ui::workspace_controller::WorkspaceController;
+use rhymr_rs::layout;
 
-const APP_ID: &str = "Rhymr";
-
-mod ui;
-mod utils;
+pub const APP_ID: &str = "Rhymr";
 
 fn main() -> glib::ExitCode {
     // Register the resource bundle from the compiled resource file
@@ -25,7 +22,7 @@ fn main() -> glib::ExitCode {
 
     // Connect activate signal
     app.connect_activate(|app| {
-        let (_window, _controller) = ui::layout::build_ui(app);
+        let (_window, _controller) = layout::build_ui(app);
     });
 
     app.run()

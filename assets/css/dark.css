@@ -384,7 +384,7 @@ listbox > row {
 }
 
 .file-tree-container label {
-    padding: 5px;
+    padding: 8px;
     text-align: left;
     background-color: #1e1e1e;
 }
@@ -395,12 +395,6 @@ listbox > row {
 
 .file-list image {
     background: none;
-}
-
-
-/* Ensure the icon container has proper sizing */
-.file-list image {
-    -gtk-icon-size: 16px;
 }
 
 /* Status bar styling */

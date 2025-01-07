@@ -1,11 +1,11 @@
-use crate::ui::workspace_controller::WorkspaceController;
 use crate::utils::file_ops::FileOps;
 use gtk::prelude::*;
 use gtk::{Box, Button, Frame, Label, Notebook, ScrolledWindow, TextBuffer, TextView, Window};
 use std::cell::RefCell;
 use std::path::{Path, PathBuf};
 use std::rc::Rc;
-use crate::ui::comps::file_tree::FileTree;
+use crate::workspace::file_tree::FileTree;
+use crate::workspace::workspace_controller::WorkspaceController;
 
 pub struct Workspace {
     frame: Frame,
@@ -143,7 +143,7 @@ impl Workspace {
             .build();
 
         let empty_label = Label::builder()
-            .label("No files are open")
+            .label("no files open")
             .css_classes(vec!["empty-state-label"])
             .build();
 

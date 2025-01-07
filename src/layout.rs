@@ -1,15 +1,15 @@
-use crate::ui::comps::file_tree::FileTree;
-use crate::ui::comps::rhyme_search::RhymeSearch;
-use crate::ui::comps::workspace::Workspace;
-use crate::ui::workspace_controller::WorkspaceController;
-use crate::APP_ID;
+
 use gtk::prelude::*;
 use gtk::{Application, Box as GtkBox, Frame, Label, Orientation, Paned, ScrolledWindow, TextBuffer, TextView, WrapMode};
 use std::rc::Rc;
+use crate::rhyme_search::RhymeSearch;
+use crate::workspace::file_tree::FileTree;
+use crate::workspace::workspace::Workspace;
+use crate::workspace::workspace_controller::WorkspaceController;
 
 pub fn build_ui(app: &Application) -> (gtk::ApplicationWindow, Rc<WorkspaceController>) {
-    let css_provider = crate::ui::css::load_css("assets/css/dark.css");
-    crate::ui::css::apply_css_to_app(&css_provider);
+    let css_provider = crate::css::load_css("assets/css/dark.css");
+    crate::css::apply_css_to_app(&css_provider);
 
     let main_window = gtk::ApplicationWindow::builder()
         .application(app)
@@ -27,7 +27,7 @@ pub fn build_ui(app: &Application) -> (gtk::ApplicationWindow, Rc<WorkspaceContr
 
     main_window.set_child(Some(&main_layout));
 
-    crate::ui::menu::setup_menu(app, workspace_controller.clone());
+    crate::menu::setup_menu(app, workspace_controller.clone());
 
     main_window.present();
     
@@ -59,7 +59,7 @@ fn create_status_bar() -> GtkBox {
         .build();
     
     // Add some sample content to the status bar
-    let status_label = Label::new(Some(APP_ID));
+    let status_label = Label::new(Some("Rhymr"));
     status_label.set_css_classes(&["status-text"]);
     status_bar.append(&status_label);
 

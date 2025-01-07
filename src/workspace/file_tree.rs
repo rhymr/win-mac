@@ -1,22 +1,15 @@
 use gtk::prelude::*;
-use gtk::{Align, Box, Box as GtkBox, Label, ListBox, Orientation, Image, Frame};
-use std::path::Path;
+use gtk::{Align, Box as GtkBox, Frame, Image, Label, ListBox, Orientation};
+use gtk::builders::LabelBuilder;
 
 #[derive(Clone)]
 pub struct FileTree {
     frame: Frame,
-    file_list: ListBox,
-    // header_label: Label,
+    file_list: ListBox
 }
 
 impl FileTree {
     pub fn new(open_files: Vec<String>) -> Self {
-
-
-        // Create a header label
-        // let header_label = Label::new(Some("Open Files"));
-        // header_label.set_css_classes(&*vec!["file-tree-header"]);
-
         // Create a ListBox to display the open files
         let file_list = ListBox::builder()
             .css_classes(vec!["file-list"])
@@ -62,30 +55,8 @@ impl FileTree {
             hbox.set_valign(Align::Center);
 
             // Create the icon from the resource
-            let icon = if let Some(file_type) = Path::new(&file)
-                .extension()
-                .and_then(|s| s.to_str())
-            {
-                match file_type.to_lowercase().as_str() {
-                    "txt" | "md" | "rs" | "toml" | "json" => {
-                        // Use the bundled SVG for text files
-                        let icon = Image::from_resource("/org/gtk_rs/rhymr/icons/text_dark.svg");
-                        icon.set_pixel_size(16);
-                        icon
-                    }
-                    _ => {
-                        // Fallback to system icon for unknown types
-                        let icon = Image::from_icon_name("text-x-generic-symbolic");
-                        icon.set_pixel_size(16);
-                        icon
-                    }
-                }
-            } else {
-                // Fallback for files without extension
-                let icon = Image::from_icon_name("text-x-generic-symbolic");
-                icon.set_pixel_size(16);
-                icon
-            };
+            let icon = Image::from_resource("/org/gtk_rs/rhymr/icons/text_dark.svg");
+            icon.set_pixel_size(16);
 
             icon.set_css_classes(&["file-icon"]);
             

@@ -12,6 +12,9 @@ futures-channel = "0.3"
 futures-util = "0.3.31"
 gdk-pixbuf = "0.20.7"
 gio = "0.20.7"
+osascript = "0.3.0"
+serde = { version = "1.0.217", features = ["derive"] }
+dirs = "5.0.1"
 
 [package.metadata.bundle]
 name = "Rhymr"
