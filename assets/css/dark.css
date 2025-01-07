@@ -386,7 +386,7 @@ listbox > row {
 .file-tree-container label {
     padding: 8px;
     text-align: left;
-    background-color: #1e1e1e;
+    background-color: #2e2e2e;
 }
 
 .file-list label {
@@ -409,4 +409,176 @@ listbox > row {
     color: #e1e1e1;
     font-size: 12px;
     padding: 4px 0;
+}
+
+/* Update the file tree list styling */
+.file-list {
+    background: #3e3e3e;
+    margin: 5px;
+    padding: 0;
+}
+
+.file-list > row {
+    padding: 0;
+    margin: 0;
+    max-height: 8px;
+    background-color: #3e3e3e;
+}
+
+.file-list > row:hover {
+    background-color: #4e4e4e;
+}
+
+.file-list > row:hover label {
+    background-color: #4e4e4e;
+}
+
+.file-list > row:hover image {
+    background-color: #4e4e4e;
+}
+
+.file-list box {
+    margin: 0;
+    padding: 0;
+    background-color: #3e3e3e;
+}
+
+.file-list label {
+    padding: 0;
+    margin: 0;
+    background-color: #3e3e3e;
+}
+
+.file-icon {
+    margin: 0;
+    padding: 2px;
+    min-width: 16px;
+    min-height: 16px;
+}
+
+.file-tree-container {
+    background-color: #2e2e2e;
+    border-bottom: 1px solid #000000;
+}
+
+.file-tree-outer {
+    margin: 5px;
+    background-color: #3e3e3e;
+
+}
+
+.file-tree-inner {
+    background-color: #3e3e3e;
+}
+
+.file-tree-header {
+    padding: 8px;
+    background: none;
+    color: #ffffff;
+}
+
+.file-list {
+    background: #3e3e3e;
+    margin: 5px;
+    padding: 0;
+}
+
+.file-list > row {
+    padding: 0;
+    margin: 0;
+    min-height: 20px;
+    background-color: #3e3e3e;
+}
+
+.file-list > row:hover {
+    background-color: #4e4e4e;
+}
+
+.file-list > row:hover * {
+    background-color: #4e4e4e;
+}
+
+.file-list-row {
+    padding: 2px 5px;
+    margin: 0;
+    min-height: 20px;
+    background-color: inherit;
+}
+
+.file-icon {
+    margin: 0;
+    padding-left: 5px;
+    min-width: 16px;
+    min-height: 16px;
+    background-color: inherit;
+}
+
+.file-list label {
+    padding: 0;
+    margin: 0 0 0 4px;
+    background-color: inherit;
+}
+
+.file-list > row:selected {
+    background-color: #4e4e4e;
+}
+
+.file-list > row:selected * {
+    background-color: #4e4e4e;
+}
+
+.file-list > row:hover:not(:selected) {
+    background-color: #404040;
+}
+
+.file-list > row:hover:not(:selected) * {
+    background-color: #404040;
+}
+
+.file-list > row {
+    padding: 0;
+    margin: 0;
+    min-height: 20px;
+    background-color: #3e3e3e;
+}
+
+.file-list-row {
+    padding: 2px 5px;
+    margin: 0;
+    min-height: 20px;
+    background-color: inherit;
+}
+
+/* Add borders to the main sections */
+.file-tree-container {
+    border-right: 1px solid #000000;
+}
+
+.workspace-frame {
+    border: none;
+}
+
+/* Right section border */
+.right-section {
+    border-left: 1px solid #000000;
+}
+
+/* Left edge border */
+.left-edge {
+    border-left: 1px solid #000000;
+}
+
+/* Right edge border */
+.right-edge {
+    border-right: 1px solid #000000;
+}
+
+/* Bottom section borders */
+.bottom-section {
+    border-top: 1px solid #000000;
+}
+
+/* Remove left border for bottom left frame */
+.bottom-left-frame {
+    border-left: 1px solid #000000;
 }

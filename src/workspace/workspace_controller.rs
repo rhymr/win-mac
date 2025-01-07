@@ -28,12 +28,13 @@ impl WorkspaceController {
     pub fn handle_new_file(&self) {
         if let Some(workspace) = self.get_workspace() {
             let (path, content) = FileOps::new_file();
-            workspace.add_new_tab(&path, &content);
+            let page_num = workspace.add_new_tab(&path, &content);
             
-            // Update the file tree after adding new file
+            // Update the file tree and select the new tab
             let open_files = workspace.get_open_files();
             if let Some(ref file_tree) = workspace.file_tree {
                 file_tree.update_file_list(open_files);
+                file_tree.select_row(page_num as i32);
             }
         }
     }
@@ -41,12 +42,13 @@ impl WorkspaceController {
     pub fn handle_open_file(&self, window: &Window) {
         if let Some((path, content)) = FileOps::open_file(Some(window.clone())) {
             if let Some(workspace) = self.workspace.borrow().as_ref() {
-                workspace.add_new_tab(&path, &content);
+                let page_num = workspace.add_new_tab(&path, &content);
                 
-                // Update the file tree after opening the file
+                // Update the file tree and select the new tab
                 let open_files = workspace.get_open_files();
                 if let Some(ref file_tree) = workspace.file_tree {
                     file_tree.update_file_list(open_files);
+                    file_tree.select_row(page_num as i32);
                 }
             }
         }

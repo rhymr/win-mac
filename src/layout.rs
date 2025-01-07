@@ -1,4 +1,3 @@
-
 use gtk::prelude::*;
 use gtk::{Application, Box as GtkBox, Frame, Label, Orientation, Paned, ScrolledWindow, TextBuffer, TextView, WrapMode};
 use std::rc::Rc;
@@ -70,7 +69,7 @@ fn create_status_bar() -> GtkBox {
 fn create_content_layout(workspace_controller: &Rc<WorkspaceController>) -> (Paned, FileTree, Rc<Workspace>) {
     // Create the FileTree component with open files
     let open_files = Vec::new();
-    let file_tree = FileTree::new(open_files.clone());
+    let mut file_tree = FileTree::new(open_files.clone());
 
     // Create the Workspace instance with the FileTree
     let workspace = Rc::new(Workspace::new(
@@ -78,17 +77,32 @@ fn create_content_layout(workspace_controller: &Rc<WorkspaceController>) -> (Pan
         Some(file_tree.clone())
     ));
 
+    // Set the workspace reference in the file tree
+    file_tree.set_workspace(workspace.clone());
+    
     workspace_controller.set_workspace(workspace.clone());
 
     // Create the bottom frame
     let bottom_frame = RhymeSearch::new();
-    let vertical_pane = create_vertical_split(workspace.get_widget(), bottom_frame.get_widget(), 432);
+    let bottom_widget = bottom_frame.get_widget();
+    bottom_widget.add_css_class("bottom-section");
+    let vertical_pane = create_vertical_split(workspace.get_widget(), bottom_widget, 432);
+
+    // Create a placeholder frame for the bottom left section
+    let bottom_left_frame = create_label_section("Section", "Description");
+    bottom_left_frame.add_css_class("bottom-left-frame");
+    
+    // Split the left section vertically
+    let file_tree_widget = file_tree.get_widget();
+    file_tree_widget.add_css_class("left-edge");
+    let left_split = create_vertical_split(file_tree_widget, &bottom_left_frame, 360);
 
     // Horizontal Split between File Tree and Center
-    let left_and_center_pane = create_horizontal_split(file_tree.get_widget(), &vertical_pane, 320);
+    let left_and_center_pane = create_horizontal_split(&left_split, &vertical_pane, 320);
 
-    // Create the final horizontal split
+    // Create the final horizontal split with right section
     let right_frame = create_label_section("Right", "Description");
+    right_frame.set_css_classes(&vec!["right-section", "right-edge"]);
     let final_split = create_horizontal_split(&left_and_center_pane, &right_frame, 960);
 
     (final_split, file_tree, workspace)

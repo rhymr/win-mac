@@ -56,7 +56,7 @@ impl Workspace {
         &self.controller
     }
 
-    pub fn add_new_tab(&self, path: &Path, content: &str) {
+    pub fn add_new_tab(&self, path: &Path, content: &str) -> u32 {
         // Remove empty state if it exists
         if self.notebook.n_pages() == 1 && self.open_files.borrow().is_empty() {
             self.notebook.remove_page(Some(0));
@@ -64,18 +64,21 @@ impl Workspace {
         
         // Ensure the controller is still referenced
         let controller = self.controller.clone();
-        add_new_tab(&self.notebook, path, content, Some(controller));
+        let page_num = add_new_tab(&self.notebook, path, content, Some(controller));
         self.open_files.borrow_mut().push(path.to_path_buf());
 
-        // Update the file tree
+        // Update the file tree and select the new tab
         if let Some(ref file_tree) = self.file_tree {
             let open_files = self.get_open_files();
             file_tree.update_file_list(open_files);
+            file_tree.select_row(page_num as i32);
         }
         
         // Ensure notebook shows tabs and has proper styling
         self.notebook.set_show_tabs(true);
         self.notebook.add_css_class("has-open-files");
+
+        page_num
     }
 
     pub fn get_current_buffer(&self) -> Option<(TextBuffer, Option<PathBuf>)> {
@@ -174,6 +177,7 @@ impl Workspace {
         let notebook_ref = self.notebook.clone();
         let open_files_ref = self.open_files.clone();
         let controller_ref = self.controller.clone();
+        let file_tree_ref = self.file_tree.clone();
 
         open_button.connect_clicked(move |button| {
             if let Some(window) = button.root().and_downcast::<Window>() {
@@ -181,14 +185,15 @@ impl Workspace {
                     if notebook_ref.n_pages() == 1 && open_files_ref.borrow().is_empty() {
                         notebook_ref.remove_page(Some(0));
                     }
-                    add_new_tab(&notebook_ref, &*path, &*content, Some(controller_ref.clone()));
+                    let page_num = add_new_tab(&notebook_ref, &*path, &*content, Some(controller_ref.clone()));
                     open_files_ref.borrow_mut().push(path);
                     
-                    // Update file tree here after adding the tab
+                    // Update file tree and select the new tab
                     if let Some(workspace) = controller_ref.get_workspace() {
                         if let Some(ref file_tree) = workspace.file_tree {
                             let open_files = workspace.get_open_files();
                             file_tree.update_file_list(open_files);
+                            file_tree.select_row(page_num as i32);
                         }
                     }
                 }
@@ -228,9 +233,15 @@ impl Workspace {
             file_tree.update_file_list(open_files);
         }
     }
+
+    pub fn switch_to_tab(&self, index: usize) {
+        if index < self.notebook.n_pages() as usize {
+            self.notebook.set_current_page(Some(index as u32));
+        }
+    }
 }
 
-fn add_new_tab(notebook: &Notebook, path: &Path, content: &str, controller: Option<Rc<WorkspaceController>>) {
+fn add_new_tab(notebook: &Notebook, path: &Path, content: &str, controller: Option<Rc<WorkspaceController>>) -> u32 {
     // Create text view and buffer
     let text_view = TextView::builder()
         .editable(true)
@@ -292,4 +303,6 @@ fn add_new_tab(notebook: &Notebook, path: &Path, content: &str, controller: Opti
     notebook.set_show_tabs(true);
     notebook.add_css_class("has-open-files");
     notebook.set_current_page(Some(page_num));
+    
+    page_num
 } 
