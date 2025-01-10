@@ -46,41 +46,6 @@ frame {
     background: none;
 }
 
-/* Frame positioning and borders */
-frame:first-child {
-    /*border-bottom: 1px solid #000000;*/
-    border-right: 1px solid #000000;
-}
-
-frame:nth-child(2) {
-    border-bottom: 1px solid #000000;
-    border-left: none;
-}
-
-frame:nth-last-child(2) {
-    border-top: 1px solid #000000;
-    border-right: 1px solid #000000;
-}
-
-frame:last-child {
-    border-top: 1px solid #000000;
-    border-left: none;
-}
-
-frame:nth-child(3),
-frame:nth-child(4) {
-    border-right: 1px solid #000000;
-    border-top: none;
-}
-
-grid > frame:first-child {
-    border-right: 1px solid #000000;
-}
-
-grid > frame:last-child {
-    border-left: none;
-}
-
 frame > * {
     background-color: #2e2e2e;
 }
@@ -111,7 +76,7 @@ textview {
     background: #3e3e3e;
     color: #ffffff;
     border: none;
-    padding: 5px;
+    /*padding: 5px;*/
 }
 
 /* Entry (Text Input) widgets styling */
@@ -177,13 +142,13 @@ box.rhyme-search-container-margin {
 frame.rhyme-search-container {
     background: #1e1e1e;
     border-top: 1px solid #000000;
-    border-right: 1px solid #000000;
+    /*border-right: 1px solid #000000;*/
 }
 
 /* Customized gutter */
 .gutter {
-    min-width: 40px;
-    padding: 5px 2px 0;
+    min-width: 56px;
+    padding: 0 2px 0;
     border: none;
     background-color: #3e3e3e;
     border-right: 2px solid #000000;
@@ -580,5 +545,90 @@ listbox > row {
 
 /* Remove left border for bottom left frame */
 .bottom-left-frame {
+    border-right: 1px solid #000000;
     border-left: 1px solid #000000;
+}
+
+/* Add these rules to your existing CSS */
+
+.editor-text {
+    padding: 8px;
+    background: none;
+    font-family: monospace;
+}
+
+/* Line numbers styling */
+.line-numbers {
+    background-color: #2e2e2e;
+    color: #666666;
+    border-right: 1px solid #1e1e1e;
+    padding: 0;
+    margin: 0;
+    font-family: monospace;
+}
+
+/* Remove old editor styles */
+.editor-text {
+    background: none;
+    font-family: monospace;
+    border: 1px solid #000000;
+}
+
+/* Rhyme editor specific styling */
+.rhyme-editor {
+    /*font-size: 14px;*/
+    line-height: 1.6;
+    border: 1px solid #000000;
+}
+
+sourceview {
+    background-color: #1e1e1e;
+    color: #e1e1e1;
+}
+
+sourceview text {
+    background-color: #1e1e1e;
+    color: #e1e1e1;
+    border: 1px solid #000000;
+}
+
+sourceview text selection {
+    background-color: #2b5278;
+    color: #ffffff;
+}
+
+/* Current line highlighting */
+sourceview text:selected {
+    background-color: rgba(43, 82, 120, 0.4);
+}
+
+/* Remove padding from scrolled window to fix gutter border */
+scrolledwindow {
+    padding: 0;
+    margin: 0;
+}
+
+/* Remove any padding from the source view */
+sourceview {
+    padding: 0;
+    margin: 0;
+}
+
+/* Add to your existing CSS */
+.syllable-count {
+    color: #888888;
+    font-size: 10px;
+    padding: 0;
+    margin: 0;
+    background-color: #2e2e2e;
+    font-family: monospace;
+}
+
+.rhyme-editor-gutter {
+    padding: 0;
+    margin: 0;
+    color: #888;
+    border-right: 1px solid #000000;
+    font-family: "Georgia", serif;
+    background-color: #2e2e2e;
 }

@@ -1,9 +1,9 @@
+use futures_util::StreamExt;
+use glib::MainContext;
 use gtk::prelude::*;
 use gtk::{FileDialog, Window};
 use std::fs;
 use std::path::PathBuf;
-use glib::MainContext;
-use futures_util::StreamExt;
 use std::sync::{Arc, Mutex};
 
 pub struct FileOps;

@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<style-scheme id="rhymr" name="Rhymr" version="1.0">
+  <author>Rhymr Team</author>
+  <description>Dark theme optimized for poetry writing</description>
+  
+  <!-- Colors -->
+  <color name="bg" value="#1e1e1e"/>
+  <color name="text" value="#e1e1e1"/>
+  <color name="selection" value="#2b5278"/>
+  <color name="line-numbers" value="#888888"/>
+  <color name="current-line" value="#2a2a2a"/>
+  
+  <!-- Main styles -->
+  <style name="text" foreground="#e1e1e1" background="#1e1e1e"/>
+  <style name="selection" background="#2b5278"/>
+  <style name="cursor" foreground="#ffffff"/>
+  <style name="current-line" background="#2a2a2a"/>
+  <style name="line-numbers" foreground="#888888" background="#2e2e2e" background-alpha="1"/>
+  <style name="current-line-number" foreground="#ffffff" bold="true" background="#2e2e2e" background-alpha="1"/>
+  <style name="background-pattern" background="#222222"/>
+</style-scheme> 

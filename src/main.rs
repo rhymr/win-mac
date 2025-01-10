@@ -14,9 +14,8 @@ fn main() -> glib::ExitCode {
             .expect("Failed to load resources")
     );
 
-    let gtk_id = format!("org.gtk_rs.{}", APP_ID.to_lowercase());
     let app = gtk::Application::builder()
-        .application_id(&gtk_id)
+        .application_id("org.gtk_rs.Rhymr")
         .flags(gio::ApplicationFlags::HANDLES_OPEN)
         .build();
 

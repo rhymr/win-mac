@@ -5,6 +5,7 @@ use std::cell::RefCell;
 use std::path::{Path, PathBuf};
 use std::rc::Rc;
 use crate::workspace::file_tree::FileTree;
+use crate::workspace::text_editor::TextEditor;
 use crate::workspace::workspace_controller::WorkspaceController;
 
 pub struct Workspace {
@@ -242,30 +243,15 @@ impl Workspace {
 }
 
 fn add_new_tab(notebook: &Notebook, path: &Path, content: &str, controller: Option<Rc<WorkspaceController>>) -> u32 {
-    // Create text view and buffer
-    let text_view = TextView::builder()
-        .editable(true)
-        .wrap_mode(gtk::WrapMode::Word)
-        .build();
+    // Create text editor
+    let text_editor = TextEditor::new();
+    text_editor.set_text(content);
     
-    let buffer = TextBuffer::builder()
-        .text(content)
-        .build();
-    
-    text_view.set_buffer(Some(&buffer));
-
-    // Add text view to a scrolled window
-    let scrolled_window = ScrolledWindow::builder()
-        .hexpand(true)
-        .vexpand(true)
-        .child(&text_view)
-        .build();
-
     // Create tab label box
     let tab_box = Box::builder()
         .orientation(gtk::Orientation::Horizontal)
         .css_classes(vec!["tab-box"])
-        .spacing(0)  // Reduced spacing
+        .spacing(0)
         .build();
 
     // Create the label
@@ -283,21 +269,15 @@ fn add_new_tab(notebook: &Notebook, path: &Path, content: &str, controller: Opti
     tab_box.append(&close_button);
 
     // Add the page with our custom tab
-    let page_num = notebook.append_page(&scrolled_window, Some(&tab_box));
+    let page_num = notebook.append_page(text_editor.get_widget(), Some(&tab_box));
 
     // Connect close button signal
     if let Some(controller) = controller {
         close_button.connect_clicked(move |button| {
-            // Get the application window from the button's toplevel
             if let Some(window) = button.root().and_downcast::<Window>() {
                 controller.handle_close_tab(&window);
-                println!("Close button clicked {}", &window.title().unwrap().to_lowercase());
-            } else {
-                println!("Error: Could not get window from button");
             }
         });
-    } else {
-        println!("No controller available");
     }
 
     notebook.set_show_tabs(true);

@@ -1,6 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <gresources>
   <gresource prefix="/org/gtk_rs/rhymr">
+    <file>css/dark.css</file>
+    <file>css/base.css</file>
+    <file>css/notebook.css</file>
+    <file>styles/rhymr.xml</file>
     <file compressed="true" preprocess="xml-stripblanks">icons/text_dark.svg</file>
   </gresource>
 </gresources> 
