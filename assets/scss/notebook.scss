@@ -1,0 +1,83 @@
+notebook {
+    background-color: var(--bg-darkest);
+
+    & > textview {
+        padding-top: 0;
+    }
+
+    & > stack {
+        background-color: var(--bg-darkest);
+    }
+
+    & > header {
+        background-color: var(--bg-darkest);
+        padding: 0;
+        margin: 0;
+
+        & > tabs {
+            background-color: var(--bg-darkest);
+
+            & > tab {
+                background-color: var(--bg-dark);
+                padding: 4px 8px;
+                border: 1px solid var(--border-dark);
+                margin: 0;
+
+                &:checked {
+                    background-color: var(--bg-light);
+                    border-bottom: none;
+                    font-weight: bold;
+                    color: var(--text-bright);
+                    border: 1px solid var(--border-dark);
+
+                    & > label {
+                        color: var(--text-bright);
+                        background-color: var(--bg-light);
+                    }
+                }
+
+                &:hover {
+                    background-color: var(--bg-mid);
+                }
+
+                & label {
+                    color: var(--text-bright);
+                }
+            }
+        }
+    }
+}
+
+.workspace-notebook {
+    padding: 8px 5px 5px 5px;
+    margin: 0;
+
+    & tab {
+        &:checked {
+            background-color: var(--bg-mid);
+        }
+
+        & label {
+            color: var(--text-dim);
+        }
+    }
+}
+
+.tab-box {
+    background: none;
+}
+
+.tab-close-button {
+    padding: 0 0 0 5px;
+    margin: 0;
+    background: none;
+    border: none;
+
+    &:hover {
+        padding: 0 0 0 5px;
+        margin: 0;
+        background: none;
+        border: none;
+        color: #ff0000;
+    }
+}

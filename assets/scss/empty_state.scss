@@ -1,0 +1,33 @@
+/* Empty state styling */
+.empty-button-box {
+    background-color: var(--bg-darkest);
+}
+
+.empty-state-box {
+    background-color: var(--bg-darkest);
+}
+
+.empty-state-label {
+    color: var(--text-muted);
+    background-color: var(--bg-darkest);
+    font-size: 32px;
+    margin-bottom: 20px;
+}
+
+.suggested-action {
+    background-color: var(--selection-bg);
+    color: var(--text-bright);
+    padding: 8px 16px;
+    border: 1px solid var(--border-dark);
+    border-radius: 4px;
+    min-width: 120px;
+    margin: 4px;
+
+    &:hover {
+        background-color: var(--selection-hover);
+    }
+
+    &:active {
+        background-color: var(--selection-active);
+    }
+} 

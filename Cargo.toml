@@ -12,6 +12,7 @@ datamuse-api-rs = "2.1.0"
 futures-channel = "0.3"
 futures-util = "0.3.31"
 gio = "0.20.7"
+grass = "0.13.4"
 
 [build-dependencies]
 glib-build-tools = "0.20.0"

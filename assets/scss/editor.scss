@@ -1,0 +1,119 @@
+/* Source view styling */
+sourceview {
+    background-color: var(--bg-darkest);
+    color: var(--text-dim);
+    padding: 0;
+    margin: 0;
+
+    & text {
+        background-color: var(--bg-darkest);
+        color: var(--text-dim);
+        border: 1px solid var(--border-dark);
+
+        &:selected {
+            background-color: rgba(43, 82, 120, 0.4);
+        }
+
+        & selection {
+            background-color: var(--selection-bg);
+            color: var(--text-bright);
+        }
+    }
+}
+
+/* Gutter styling */
+.rhyme-editor-gutter {
+    padding: 0;
+    margin: 0;
+    color: var(--text-muted);
+    font-family: "Georgia", serif;
+    background-color: var(--bg-mid);
+
+    &:selected {
+        background-color: rgba(43, 82, 120, 0.4);
+    }
+}
+
+.syllable-count {
+    color: var(--text-muted);
+    font-size: 10px;
+    padding: 0;
+    margin-left: 6px;
+    margin-right: 8px;
+    background-color: var(--bg-mid);
+    font-family: monospace;
+    text-align: center;
+
+    &:selected {
+        background-color: rgba(43, 82, 120, 0.4);
+    }
+}
+
+.line-numbers {
+    background-color: var(--bg-mid);
+    color: var(--text-number);
+    border-right: 1px solid var(--bg-darkest);
+    padding: 0;
+    margin: 0;
+    font-family: monospace;
+    text-align: center;
+
+    &:selected {
+        background-color: rgba(43, 82, 120, 0.4);
+    }
+
+    & + .syllable-count {
+        margin-top: 4px;
+    }
+}
+
+/* Editor text styling */
+.editor-text {
+    padding: 8px;
+    background: none;
+    font-family: monospace;
+    border: 1px solid var(--border-dark);
+}
+
+.rhyme-editor {
+    line-height: 1.6;
+    border: 1px solid var(--border-dark);
+}
+
+/* Remove any border from scrolled window containing source view */
+scrolledwindow {
+    padding: 0;
+    margin: 0;
+    border: none;
+    background-color: var(--bg-darkest);
+}
+
+/* Remove any border from the frame containing the source view */
+frame.rhyme-editor {
+    border: none;
+    background-color: var(--bg-darkest);
+    margin: 0;
+    padding: 0;
+}
+
+textview {
+    background-color: var(--bg-mid);
+
+    & text {
+        background-color: var(--bg-mid);
+    }
+}
+
+/* Fix gutter border */
+.rhyme-editor-view {
+    background-color: var(--bg-darkest);
+    color: var(--text-bright);
+    border: none;
+
+    & textview text {
+        background-color: var(--bg-darkest);
+        color: var(--text-bright);
+        border: none;
+        padding-left: 8px;
+    }
+} 

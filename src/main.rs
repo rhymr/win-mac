@@ -1,7 +1,7 @@
 use gio::Resource;
 use gtk::prelude::*;
 use gtk::{gio, glib};
-use rhymr_rs::layout;
+use rhymr_rs::{css, layout};
 
 pub const APP_ID: &str = "Rhymr";
 
@@ -14,6 +14,10 @@ fn main() -> glib::ExitCode {
             .expect("Failed to load resources")
     );
 
+    // Compile scss files into css files
+    css::compile_sass().expect("panic message");
+
+    // Build the application
     let app = gtk::Application::builder()
         .application_id("org.gtk_rs.Rhymr")
         .flags(gio::ApplicationFlags::HANDLES_OPEN)
@@ -24,5 +28,6 @@ fn main() -> glib::ExitCode {
         let (_window, _controller) = layout::build_ui(app);
     });
 
+    // Run application!
     app.run()
 }

@@ -1,0 +1,35 @@
+/* Rhyme search styling */
+.rhyme-search-container-bg {
+    background: var(--bg-darkest);
+}
+
+.rhyme-search-container-margin {
+    margin: 0 5px 5px;
+}
+
+frame.rhyme-search-container {
+    background: var(--bg-darkest);
+    border-top: 1px solid var(--border-dark);
+}
+
+.rhyme-results {
+    background-color: var(--bg-mid);
+    margin: 0;
+    padding: 0;
+
+    & > row {
+        padding: 0;
+        margin: 0;
+        background-color: var(--bg-mid);
+    }
+
+    & .syllable-header {
+        background-color: var(--bg-mid) !important;
+        padding-bottom: 5px !important;
+    }
+
+    & label {
+        word-wrap: break-word;
+        background-color: var(--bg-mid);
+    }
+} 

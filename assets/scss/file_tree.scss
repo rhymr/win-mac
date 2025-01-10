@@ -1,0 +1,90 @@
+/* File tree styling */
+.file-list {
+    background: var(--bg-mid);
+    margin: 5px;
+    padding: 0;
+
+    & > row {
+        padding: 0;
+        margin: 0;
+        min-height: 16px;
+        background-color: var(--bg-mid);
+
+        &:hover {
+            background-color: var(--bg-light);
+        }
+
+        &:hover * {
+            background-color: var(--bg-light);
+        }
+
+        &:selected {
+            background-color: var(--bg-light);
+        }
+
+        &:selected * {
+            background-color: var(--bg-light);
+        }
+
+        &:hover:not(:selected) {
+            background-color: var(--bg-hover);
+        }
+
+        &:hover:not(:selected) * {
+            background-color: var(--bg-hover);
+        }
+    }
+
+    & box {
+        margin: 0;
+        padding: 0;
+        background-color: var(--bg-mid);
+    }
+
+    & label {
+        padding: 0;
+        margin: 0 0 0 4px;
+        background-color: inherit;
+    }
+}
+
+.file-icon {
+    margin: 0;
+    padding-left: 5px;
+    min-width: 16px;
+    min-height: 16px;
+    background-color: inherit;
+}
+
+.file-tree-container {
+    background-color: var(--bg-dark);
+    border-right: 1px solid var(--border-dark);
+    border-bottom: 1px solid var(--border-dark);
+
+    & label {
+        padding: 4px 4px 4px 0;
+        text-align: left;
+    }
+}
+
+.file-tree-outer {
+    margin: 5px;
+    background-color: var(--bg-mid);
+}
+
+.file-tree-inner {
+    background-color: var(--bg-mid);
+}
+
+.file-tree-header {
+    padding: 8px;
+    background: none;
+    color: var(--text-bright);
+}
+
+.file-list-row {
+    padding: 2px 5px;
+    margin: 0;
+    min-height: 16px;
+    background-color: inherit;
+} 

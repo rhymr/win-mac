@@ -28,3 +28,6 @@ Cargo.lock
 /.husky/
 /package-lock.json
 .DS_Store
+
+# Ignore compiled css
+/assets/css/

@@ -1,17 +1,42 @@
-use gtk::{CssProvider, gdk};
-use gtk::glib::Bytes;
+use grass::from_path;
+use gtk::{gdk, CssProvider};
+use std::fs;
 
-pub fn load_css(file_path: &str) -> CssProvider {
-    let css_provider = CssProvider::new();
+// TODO Load Dynamically
+const CSS_FILES: [&str; 8] = [
+    "assets/{1}/base.{1}",
+    "assets/{1}/editor.{1}",
+    "assets/{1}/empty_state.{1}",
+    "assets/{1}/file_tree.{1}",
+    "assets/{1}/layout.{1}",
+    "assets/{1}/notebook.{1}",
+    "assets/{1}/rhyme_search.{1}",
+    "assets/{1}/status_bar.{1}",
+];
 
-    // Read the file as raw bytes, NOT as a string
-    if let Ok(data) = std::fs::read(file_path) {
-        css_provider
-            .load_from_bytes(&Bytes::from_owned(data));
-    } else {
-        eprintln!("CSS file not found: {}", file_path);
+pub fn compile_sass() -> Result<(), Box<dyn std::error::Error>> {
+    for css_file in CSS_FILES {
+        let scss_path = css_file.replace("{1}", "scss");
+        let css_output = from_path(scss_path.clone(), &Default::default())?;
+        fs::write(css_file.replace("{1}", "css"), css_output)?;
     }
 
+    Ok(())
+}
+
+pub fn load_css() -> CssProvider {
+    let css_provider = CssProvider::new();
+
+    // Read and combine all CSS files
+    let mut combined_css = String::new();
+    for css_file in CSS_FILES {
+        if let Ok(css_content) = fs::read_to_string(css_file.replace("{1}", "css")) {
+            combined_css.push_str(&css_content);
+            combined_css.push('\n');
+        }
+    }
+
+    css_provider.load_from_data(&combined_css);
     css_provider
 }
 
