@@ -31,3 +31,5 @@ Cargo.lock
 
 # Ignore compiled css
 /assets/css/
+
+.env

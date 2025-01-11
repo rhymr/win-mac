@@ -4,15 +4,20 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
+# gtk
 gtk = { version = "0.9.5", package = "gtk4", features = ["v4_12"] }
 sourceview5 = { version = "0.9.1", features = ["gtk_v4_12"] }
-glib = "0.20.7"
+glib = { version = "0.20.7" }
+gio = { version = "0.20.7" }
+
+# futures
+futures-channel = { version = "0.3.31" }
+futures-util = { version = "0.3.31" }
 tokio = { version = "1.42.0", features = ["full"] }
-datamuse-api-rs = "2.1.0"
-futures-channel = "0.3"
-futures-util = "0.3.31"
-gio = "0.20.7"
-grass = "0.13.4"
+
+# misc
+datamuse-api-rs = { version = "2.1.1" } # rhyme search api
+grass = { version = "0.13.4" } # scss -> css
 
 [build-dependencies]
-glib-build-tools = "0.20.0"
+glib-build-tools = { version = "0.20.0" }
