@@ -1,6 +1,6 @@
 use crate::utils::file_ops::FileOps;
 use gtk::prelude::*;
-use gtk::{Box, Button, Frame, Label, Notebook, ScrolledWindow, TextBuffer, TextView, Window};
+use gtk::{Box, Button, Frame, Label, Notebook, TextBuffer, TextView, Window};
 use std::cell::RefCell;
 use std::path::{Path, PathBuf};
 use std::rc::Rc;

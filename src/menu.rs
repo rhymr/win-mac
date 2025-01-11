@@ -35,46 +35,60 @@ fn help(app: &Application) -> Menu {
 
     // Documentation action
     let docs_action = gio::SimpleAction::new("docs", None);
-    docs_action.connect_activate(|_, _| {
-        if let Err(err) = gio::AppInfo::launch_default_for_uri(
-            "https://github.com/rhymr-rs/rhymr",
-            None::<&gio::AppLaunchContext>
-        ) {
-            eprintln!("Failed to open docs: {}", err);
+    let app_weak = app.downgrade();
+    docs_action.connect_activate(move |_, _| {
+        if let Some(app) = app_weak.upgrade() {
+            if let Some(window) = app.active_window() {
+                let launcher = gtk::UriLauncher::new("https://github.com/rhymr/win-mac");
+                let ctx = glib::MainContext::default();
+                ctx.spawn_local(async move {
+                    if let Err(e) = launcher.launch_future(Some(&window)).await {
+                        eprintln!("Failed to open docs: {}", e);
+                    }
+                });
+            }
         }
     });
     app.add_action(&docs_action);
 
     // Report issue action 
     let report_action = gio::SimpleAction::new("report-issue", None);
-    report_action.connect_activate(|_, _| {
-        if let Err(err) = gtk::gio::AppInfo::launch_default_for_uri(
-            "https://github.com/rhymr-rs/rhymr/issues",
-            None::<&gio::AppLaunchContext>
-        ) {
-            eprintln!("Failed to open issue tracker: {}", err);
+    let app_weak = app.downgrade();
+    report_action.connect_activate(move |_, _| {
+        if let Some(app) = app_weak.upgrade() {
+            if let Some(window) = app.active_window() {
+                let launcher = gtk::UriLauncher::new("https://github.com/rhymr/win-mac/issues");
+                let ctx = glib::MainContext::default();
+                ctx.spawn_local(async move {
+                    if let Err(e) = launcher.launch_future(Some(&window)).await {
+                        eprintln!("Failed to open issue tracker: {}", e);
+                    }
+                });
+            }
         }
     });
     app.add_action(&report_action);
 
     // About action
     let about_action = gio::SimpleAction::new("about", None);
+    let app_weak = app.downgrade();
     about_action.connect_activate(move |_, _| {
-        /*if let Some(window) = app.active_window() {
-            let dialog = gtk::AboutDialog::builder()
-                .program_name("Rhymr")
-                .version("0.1.0")
-                .website("https://rhymr.app")
-                .website_label("Visit Website")
-                // .license_type(gtk::License::Custom)
-                .authors(vec!["Rhymr Team".to_string()])
-                .logo_icon_name("text-editor")
-                .modal(true)
-                .transient_for(&window)
-                .build();
+        if let Some(app) = app_weak.upgrade() {
+            if let Some(window) = app.active_window() {
+                let dialog = gtk::AboutDialog::builder()
+                    .program_name("Rhymr")
+                    .version("0.1.0")
+                    .website("https://rhymr.app")
+                    .website_label("Visit Website")
+                    .authors(vec!["Rhymr Team".to_string()])
+                    .logo_icon_name("text.svg")
+                    .modal(true)
+                    .transient_for(&window)
+                    .build();
 
-            dialog.present();
-        }*/
+                dialog.present();
+            }
+        }
     });
     app.add_action(&about_action);
 

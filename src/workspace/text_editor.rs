@@ -1,6 +1,6 @@
 use gtk::prelude::*;
 use gtk::{Frame, ScrolledWindow};
-use sourceview5::{Buffer as SourceBuffer, View as SourceView, MarkAttributes};
+use sourceview5::{Buffer as SourceBuffer, View as SourceView};
 use sourceview5::prelude::{BufferExt, ViewExt, GutterRendererExt, GutterRendererTextExt};
 use sourceview5::GutterRendererText;
 
