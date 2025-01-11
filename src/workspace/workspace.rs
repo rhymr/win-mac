@@ -146,41 +146,60 @@ impl Workspace {
             .halign(gtk::Align::Center)
             .build();
 
-        let empty_label = Label::builder()
-            .label("no files open")
-            .css_classes(vec!["empty-state-label"])
-            .build();
-
-        let button_box = Box::builder()
+        let new_file_box = Box::builder()
             .orientation(gtk::Orientation::Horizontal)
             .spacing(10)
-            .css_classes(vec!["empty-button-box"])
             .halign(gtk::Align::Center)
             .build();
 
-        let new_button = Button::builder()
-            .label("New File")
-            .css_classes(vec!["suggested-action"])
+        new_file_box.set_css_classes(&["empty-file-box"]);
+
+        let new_file_btn = Button::builder()
+            .label("New file")
+            .css_classes(vec!["empty-file-btn"])
             .build();
 
-        let open_button = Button::builder()
-            .label("Open File")
-            .css_classes(vec!["suggested-action"])
+        let new_file_ctrl = Label::builder()
+            .label("^N")
+            .css_classes(vec!["empty-file-ctrl"])
             .build();
+
+        new_file_box.append(&new_file_btn);
+        new_file_box.append(&new_file_ctrl);
+
+        let open_file_box = Box::builder()
+            .orientation(gtk::Orientation::Horizontal)
+            .spacing(10)
+            .halign(gtk::Align::Center)
+            .build();
+
+        open_file_box.set_css_classes(&["empty-file-box"]);
+
+        let open_file_btn = Button::builder()
+            .label("Open file")
+            .css_classes(vec!["empty-file-btn"])
+            .build();
+
+        let open_file_ctrl = Label::builder()
+            .label("^O")
+            .css_classes(vec!["empty-file-ctrl"])
+            .build();
+
+        open_file_box.append(&open_file_btn);
+        open_file_box.append(&open_file_ctrl);
 
         // Clone the Rc pointers to avoid borrowing issues
         let controller_ref = self.controller.clone();
 
-        new_button.connect_clicked(move |button| {
+        new_file_btn.connect_clicked(move |button| {
             controller_ref.handle_new_file();
         });
 
         let notebook_ref = self.notebook.clone();
         let open_files_ref = self.open_files.clone();
         let controller_ref = self.controller.clone();
-        let file_tree_ref = self.file_tree.clone();
 
-        open_button.connect_clicked(move |button| {
+        open_file_btn.connect_clicked(move |button| {
             if let Some(window) = button.root().and_downcast::<Window>() {
                 if let Some((path, content)) = FileOps::open_file(Some(window.clone())) {
                     if notebook_ref.n_pages() == 1 && open_files_ref.borrow().is_empty() {
@@ -188,7 +207,7 @@ impl Workspace {
                     }
                     let page_num = add_new_tab(&notebook_ref, &*path, &*content, Some(controller_ref.clone()));
                     open_files_ref.borrow_mut().push(path);
-                    
+
                     // Update file tree and select the new tab
                     if let Some(workspace) = controller_ref.get_workspace() {
                         if let Some(ref file_tree) = workspace.file_tree {
@@ -201,10 +220,8 @@ impl Workspace {
             }
         });
 
-        button_box.append(&new_button);
-        button_box.append(&open_button);
-        empty_state.append(&empty_label);
-        empty_state.append(&button_box);
+        empty_state.append(&new_file_box);
+        empty_state.append(&open_file_box);
 
         empty_state
     }

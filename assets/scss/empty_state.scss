@@ -1,33 +1,30 @@
 /* Empty state styling */
-.empty-button-box {
-    background-color: var(--bg-darkest);
-}
-
 .empty-state-box {
     background-color: var(--bg-darkest);
 }
 
-.empty-state-label {
-    color: var(--text-muted);
-    background-color: var(--bg-darkest);
-    font-size: 32px;
-    margin-bottom: 20px;
-}
-
-.suggested-action {
-    background-color: var(--selection-bg);
-    color: var(--text-bright);
-    padding: 8px 16px;
-    border: 1px solid var(--border-dark);
-    border-radius: 4px;
-    min-width: 120px;
-    margin: 4px;
+.empty-file-btn {
+    background: none;
+    border: none;
+    margin: 0;
+    padding: 0;
 
     &:hover {
-        background-color: var(--selection-hover);
-    }
+        & label {
+            color: var(--text-not-so-dim);
+        }
 
-    &:active {
-        background-color: var(--selection-active);
+        background: none;
+        border: none;
     }
-} 
+}
+
+.empty-file-box {
+    font-size: 24px;
+    background: none;
+    margin: 5px;
+}
+
+.empty-file-ctrl {
+    color: var(--text-muted);
+}
