@@ -1,0 +1,41 @@
+name: Lint all commits
+
+on:
+  workflow_dispatch:
+
+jobs:
+  lint-repo:
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Checkout Repo
+        uses: actions/checkout@v3
+
+      - name: Install required dependencies
+        run: |
+          sudo apt update
+          sudo apt install -y sudo
+          sudo apt install -y git curl
+          curl -sL https://deb.nodesource.com/setup_20.x | sudo -E bash -
+          sudo DEBIAN_FRONTEND=noninteractive apt install -y nodejs
+
+      - name: Install commitlint
+        run: |
+          npm install conventional-changelog-conventionalcommits
+          npm install commitlint@latest
+
+      - name: Print versions
+        run: |
+          echo "git: $(git --version)"
+          echo "node: $(node --version)"
+          echo "npm: $(npm --version)"
+          echo "commitlint: $(npx commitlint --version)"
+
+      - name: Validate all commits in the repository with commitlint
+        run: |
+          # Get all commit hashes
+          git rev-list --all > commits.txt
+          # Loop through each commit and validate with commitlint
+          while IFS= read -r commit; do
+            echo "Validating commit: $commit"
+            git show --no-patch --pretty=format:%B $commit | npx commitlint --verbose
+          done < commits.txt
