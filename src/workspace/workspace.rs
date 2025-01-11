@@ -188,6 +188,48 @@ impl Workspace {
         open_file_box.append(&open_file_btn);
         open_file_box.append(&open_file_ctrl);
 
+        let save_file_box = Box::builder()
+            .orientation(gtk::Orientation::Horizontal)
+            .spacing(10)
+            .halign(gtk::Align::Center)
+            .build();
+
+        save_file_box.set_css_classes(&["empty-file-box"]);
+
+        let save_file = Label::builder()
+            .label("Save file")
+            .css_classes(vec!["empty-file-btn"])
+            .build();
+
+        let save_file_ctrl = Label::builder()
+            .label("^S")
+            .css_classes(vec!["empty-file-ctrl"])
+            .build();
+
+        save_file_box.append(&save_file);
+        save_file_box.append(&save_file_ctrl);
+
+        let close_tab_box = Box::builder()
+            .orientation(gtk::Orientation::Horizontal)
+            .spacing(10)
+            .halign(gtk::Align::Center)
+            .build();
+
+        close_tab_box.set_css_classes(&["empty-file-box"]);
+
+        let close_tab = Label::builder()
+            .label("Close tab")
+            .css_classes(vec!["empty-file-btn"])
+            .build();
+
+        let close_tab_ctrl = Label::builder()
+            .label("^W")
+            .css_classes(vec!["empty-file-ctrl"])
+            .build();
+
+        close_tab_box.append(&close_tab);
+        close_tab_box.append(&close_tab_ctrl);
+
         // Clone the Rc pointers to avoid borrowing issues
         let controller_ref = self.controller.clone();
 
@@ -222,6 +264,8 @@ impl Workspace {
 
         empty_state.append(&new_file_box);
         empty_state.append(&open_file_box);
+        empty_state.append(&save_file_box);
+        empty_state.append(&close_tab_box);
 
         empty_state
     }
