@@ -112,6 +112,42 @@ impl Workspace {
         Some((buffer, path))
     }
 
+    /// Save every open tab to its (already-known) path on disk.
+    pub fn save_all(&self) {
+        let paths = self.open_files.borrow().clone();
+        for (index, path) in paths.iter().enumerate() {
+            let Some(page) = self.notebook.nth_page(Some(index as u32)) else {
+                continue;
+            };
+            let Some(text_view) = page.first_child().and_then(|w| w.downcast::<TextView>().ok()) else {
+                continue;
+            };
+            let buffer = text_view.buffer();
+            let content = buffer.text(&buffer.start_iter(), &buffer.end_iter(), false);
+            if let Err(e) = fs::write(path, content.as_str()) {
+                eprintln!("Failed to save {path:?}: {e}");
+            }
+        }
+    }
+
+    /// Reload every open tab's contents from disk, discarding any unsaved
+    /// in-editor changes — useful after files changed outside the app.
+    pub fn reload_all(&self) {
+        let paths = self.open_files.borrow().clone();
+        for (index, path) in paths.iter().enumerate() {
+            let Some(page) = self.notebook.nth_page(Some(index as u32)) else {
+                continue;
+            };
+            let Some(text_view) = page.first_child().and_then(|w| w.downcast::<TextView>().ok()) else {
+                continue;
+            };
+            match fs::read_to_string(path) {
+                Ok(content) => text_view.buffer().set_text(&content),
+                Err(e) => eprintln!("Failed to reload {path:?}: {e}"),
+            }
+        }
+    }
+
     pub fn update_current_tab_path(&self, new_path: PathBuf) {
         if let Some(current_page) = self.notebook.current_page() {
             self.set_tab_label(current_page, &new_path);
@@ -154,6 +190,25 @@ impl Workspace {
 
         for (page_num, path) in affected {
             self.set_tab_label(page_num, &path);
+        }
+    }
+
+    /// Close any open tab pointed at `path` itself, or nested under it —
+    /// used after a file-tree delete removes something out from under an
+    /// open editor.
+    pub fn close_paths_under(&self, path: &Path) {
+        let indices: Vec<usize> = self
+            .open_files
+            .borrow()
+            .iter()
+            .enumerate()
+            .filter(|(_, p)| *p == path || p.starts_with(path))
+            .map(|(index, _)| index)
+            .collect();
+
+        // Remove from the highest index down so earlier indices stay valid
+        for index in indices.into_iter().rev() {
+            self.remove_tab(index);
         }
     }
 

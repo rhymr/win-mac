@@ -2,6 +2,7 @@ use crate::utils::file_ops::FileOps;
 use gtk::prelude::*;
 use gtk::Window;
 use std::cell::RefCell;
+use std::fs;
 use std::path::PathBuf;
 use std::rc::Rc;
 use crate::workspace::workspace::Workspace;
@@ -43,10 +44,72 @@ impl WorkspaceController {
     }
 
     pub fn handle_new_file(&self) {
-        if let Some(workspace) = self.get_workspace() {
-            let (path, content) = FileOps::new_file();
-            workspace.add_new_tab(&path, &content);
+        let Some(workspace) = self.get_workspace() else {
+            return;
+        };
+        let Some(root) = self.get_root_path() else {
+            return;
+        };
+
+        // Create the file directly on disk in the workspace root — same
+        // de-duplicated naming as the file tree's own "New File" — instead
+        // of a disconnected "Untitled" tab that isn't a real file (and
+        // doesn't show up in the tree) until an eventual Save As.
+        let mut candidate = root.join("Untitled.txt");
+        let mut n = 1;
+        while candidate.exists() {
+            n += 1;
+            candidate = root.join(format!("Untitled {n}.txt"));
         }
+
+        if let Err(e) = fs::write(&candidate, "") {
+            eprintln!("Failed to create {candidate:?}: {e}");
+            return;
+        }
+
+        workspace.add_new_tab(&candidate, "");
+        if let Some(ref file_tree) = workspace.file_tree {
+            file_tree.refresh();
+            file_tree.select_path(&candidate);
+        }
+    }
+
+    pub fn handle_new_folder(&self) {
+        let Some(workspace) = self.get_workspace() else {
+            return;
+        };
+        let Some(root) = self.get_root_path() else {
+            return;
+        };
+
+        let mut candidate = root.join("New Folder");
+        let mut n = 1;
+        while candidate.exists() {
+            n += 1;
+            candidate = root.join(format!("New Folder {n}"));
+        }
+
+        if let Err(e) = fs::create_dir(&candidate) {
+            eprintln!("Failed to create {candidate:?}: {e}");
+            return;
+        }
+
+        if let Some(ref file_tree) = workspace.file_tree {
+            file_tree.refresh();
+            file_tree.select_path(&candidate);
+        }
+    }
+
+    /// Close every open tab and re-point the workspace at a different
+    /// folder — used by the Recent Projects menu.
+    pub fn switch_workspace(&self, path: PathBuf) {
+        if let Some(workspace) = self.get_workspace() {
+            while !workspace.open_files.borrow().is_empty() {
+                workspace.remove_tab(0);
+            }
+        }
+        crate::utils::recent_workspaces::record_recent_workspace(&path);
+        self.set_root_path(path);
     }
 
     pub fn handle_open_file(&self, window: &Window) {

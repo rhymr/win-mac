@@ -1,7 +1,6 @@
 /* File tree styling */
 .file-list {
     background: var(--bg-mid);
-    margin: 5px;
     padding: 0;
 
     & > row {
@@ -63,11 +62,11 @@
 }
 
 .file-tree-outer {
-    margin: 0 5px 5px;
-    background-color: var(--bg-dark);
+
 }
 
 .file-tree-inner {
+    margin: 0;
     background-color: var(--bg-mid);
 }
 
@@ -91,6 +90,10 @@
     background-color: inherit;
 }
 
+.active-chevron {
+    color: var(--text-bright);
+}
+
 .dir-label {
     color: var(--text-not-so-dim);
     font-weight: bold;
@@ -108,6 +111,101 @@
     min-height: 20px;
 }
 
+/* Popovers (right-click menus, submenus) — GTK's default rounding/shadow is
+   stripped by the app-wide `* { border-radius: 0; box-shadow: none; }`
+   reset, so the menu itself needs its own elevated, rounded surface. */
+.context-menu {
+    background-color: #34373c;
+    border: 1px solid var(--border-light);
+    border-radius: 9px;
+    padding: 4px;
+    min-width: 220px;
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.45);
+}
+
 .context-menu-item {
-    padding: 6px 12px;
+    padding: 5px 8px;
+    margin: 0 2px;
+    border-radius: 5px;
+    background-color: transparent;
+    border: none;
+    color: var(--text-bright);
+    min-height: 20px;
+
+    /* The row's label/hint sit inside an unclassed Box, which would
+       otherwise still pick up the app-wide `box { background: ... }`
+       rule and show through as a mismatched rectangle. */
+    & box,
+    & label {
+        background-color: transparent;
+    }
+
+    &:hover,
+    &:hover box,
+    &:hover label {
+        background-color: var(--selection-bg);
+    }
+
+    &:active,
+    &:active box,
+    &:active label {
+        background-color: var(--selection-active);
+    }
+}
+
+.menu-shortcut {
+    color: var(--text-muted);
+    font-size: 11px;
+    margin-left: 16px;
+}
+
+.context-menu-item:hover .menu-shortcut {
+    color: var(--text-dim);
+}
+
+.context-menu separator {
+    background-color: var(--border-light);
+    margin: 4px 2px;
+    min-height: 1px;
+}
+
+.destructive-menu-item {
+    color: #e57474;
+
+    &:hover,
+    &:hover box,
+    &:hover label {
+        background-color: #b23b3b;
+        color: var(--text-bright);
+    }
+}
+
+.destructive-action {
+    background-color: #b23b3b;
+    color: var(--text-bright);
+    border: 1px solid #b23b3b;
+
+    &:hover {
+        background-color: #c94444;
+        border-color: #c94444;
+    }
+
+    &:active {
+        background-color: #942f2f;
+        border-color: #942f2f;
+    }
+}
+
+/* Drag-and-drop feedback */
+.dragging {
+    opacity: 0.4;
+}
+
+.drop-target-active {
+    background-color: var(--selection-bg);
+    border-radius: 4px;
+}
+
+.drop-target-active * {
+    background-color: var(--selection-bg);
 } 

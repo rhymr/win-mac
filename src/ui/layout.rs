@@ -7,9 +7,8 @@ use crate::workspace::workspace::Workspace;
 use crate::workspace::workspace_controller::WorkspaceController;
 
 pub fn build_ui(app: &Application) -> (gtk::ApplicationWindow, Rc<WorkspaceController>) {
-    let css_provider = crate::css::load_css();
-    crate::css::apply_css_to_app(&css_provider);
-
+    // CSS is loaded once, up front, in main.rs — the welcome window needs it
+    // too and is shown before this function ever runs.
     let main_window = gtk::ApplicationWindow::builder()
         .application(app)
         .title("Rhymr")

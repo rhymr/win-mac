@@ -1,0 +1,181 @@
+/* Welcome / project picker theming */
+.welcome-sidebar {
+    background-color: var(--bg-darkest);
+    border-right: 1px solid var(--border-dark);
+}
+
+.welcome-content {
+    background-color: var(--bg-dark);
+}
+
+.brand-box {
+    background-color: transparent;
+
+    /* title_vbox (holding the name/version labels) is a plain, unclassed
+       Box, so it still picks up the global `box { background: ... }` rule
+       unless every Box nested under the brand row is flattened too. */
+    & box,
+    & label {
+        background-color: transparent;
+    }
+}
+
+.brand-icon {
+    background-color: transparent;
+    color: var(--text-bright);
+}
+
+.sidebar-nav {
+    background-color: transparent;
+
+    & > row {
+        padding: 0;
+        margin: 2px 8px;
+        border-radius: 6px;
+
+        &:hover {
+            background-color: var(--bg-hover);
+        }
+
+        &:selected {
+            background-color: var(--selection-bg);
+        }
+
+        &:selected label {
+            background-color: var(--selection-bg);
+            color: var(--text-bright);
+        }
+    }
+
+    & label {
+        background-color: inherit;
+    }
+}
+
+.recent-projects-list {
+    background-color: transparent;
+
+    & > row {
+        background-color: var(--bg-mid);
+        margin-bottom: 6px;
+        border-radius: 8px;
+
+        &:hover {
+            background-color: var(--bg-light);
+        }
+
+        &:hover * {
+            background-color: var(--bg-light);
+        }
+
+        &:selected {
+            background-color: var(--selection-bg);
+        }
+
+        &:selected * {
+            background-color: var(--selection-bg);
+        }
+    }
+
+    & box {
+        background-color: inherit;
+    }
+}
+
+.welcome-content button,
+.welcome-content entry,
+.new-project-content button,
+.new-project-content entry {
+    border-radius: 6px;
+}
+
+/* GTK's global reset (border:none/background:none on `*`) otherwise leaves
+   checkbuttons with no visible box at all, checked or not. */
+checkbutton {
+    & check {
+        min-width: 16px;
+        min-height: 16px;
+        border: 1px solid var(--border-light);
+        border-radius: 4px;
+        background-color: var(--bg-mid);
+
+        &:checked {
+            background-color: var(--selection-bg);
+            border-color: var(--selection-bg);
+            color: var(--text-bright);
+        }
+    }
+
+    &:hover check {
+        border-color: var(--border-hover);
+    }
+
+    & label {
+        background-color: inherit;
+        margin-left: 4px;
+    }
+}
+
+.project-menu-button {
+    background: transparent;
+    border: none;
+    border-radius: 6px;
+    min-width: 24px;
+    min-height: 24px;
+    padding: 0 6px;
+    color: var(--text-not-so-dim);
+
+    &:hover {
+        background-color: var(--bg-hover);
+        color: var(--text-bright);
+    }
+}
+
+.project-avatar {
+    background-color: var(--selection-bg);
+    color: var(--text-bright);
+    border-radius: 6px;
+    font-weight: bold;
+}
+
+.title-3 {
+    font-size: 16px;
+}
+
+.bold {
+    font-weight: bold;
+}
+
+.caption {
+    font-size: 11px;
+}
+
+.dim-label {
+    color: var(--text-muted);
+}
+
+.suggested-action {
+    background-color: var(--selection-bg);
+    color: var(--text-bright);
+    border: 1px solid var(--selection-bg);
+
+    &:hover {
+        background-color: var(--selection-hover);
+        border-color: var(--selection-hover);
+    }
+
+    &:active {
+        background-color: var(--selection-active);
+        border-color: var(--selection-active);
+    }
+}
+
+.field-label {
+    color: var(--text-not-so-dim);
+    font-weight: bold;
+}
+
+.project-preview {
+    color: var(--text-muted);
+    font-size: 11px;
+}

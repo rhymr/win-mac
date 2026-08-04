@@ -5,6 +5,6 @@
     <file compressed="true" preprocess="xml-stripblanks">icons/text_dark.svg</file>
     <file compressed="true" preprocess="xml-stripblanks">icons/folder.svg</file>
     <file compressed="true" preprocess="xml-stripblanks">icons/note-active.svg</file>
-    <file compressed="true" preprocess="xml-stripblanks">icons/note-inactive.svg</file>
+    <file compressed="true" preprocess="xml-stripblanks">icons/clipboard.svg</file>
   </gresource>
 </gresources> 

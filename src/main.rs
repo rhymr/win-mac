@@ -33,12 +33,18 @@ fn main() -> glib::ExitCode {
 
     // Connect activate signal
     app.connect_activate(|app| {
+        // Load CSS once, up front — the welcome window is shown before the
+        // main layout is ever built, so it needs the theme applied here too.
+        let css_provider = css::load_css();
+        css::apply_css_to_app(&css_provider);
+
         let app_for_workspace = app.clone();
 
         // Show the workspace picker first; the main editor layout is only
         // built once a workspace has actually been chosen.
         rhymr_rs::ui::welcome::show_welcome_dialog(app, move |workspace_path| {
             println!("Loaded workspace at: {:?}", workspace_path);
+            rhymr_rs::utils::recent_workspaces::record_recent_workspace(&workspace_path);
             let (_window, controller) = layout::build_ui(&app_for_workspace);
             controller.set_root_path(workspace_path);
         });

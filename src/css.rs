@@ -2,7 +2,7 @@ use grass::Options;
 use gtk::{gdk, CssProvider};
 use std::fs;
 
-const CSS_FILES: [&str; 8] = [
+const CSS_FILES: [&str; 9] = [
     "assets/{1}/base.{1}",
     "assets/{1}/editor.{1}",
     "assets/{1}/empty_state.{1}",
@@ -11,6 +11,7 @@ const CSS_FILES: [&str; 8] = [
     "assets/{1}/notebook.{1}",
     "assets/{1}/rhyme_search.{1}",
     "assets/{1}/status_bar.{1}",
+    "assets/{1}/welcome.{1}",
 ];
 
 pub fn compile_sass() -> Result<(), Box<dyn std::error::Error>> {

@@ -1,5 +1,6 @@
 use gtk::prelude::*;
 use gtk::{gio, Application};
+use std::path::PathBuf;
 use std::rc::Rc;
 use gio::Menu;
 use crate::workspace::workspace_controller::WorkspaceController;
@@ -97,23 +98,47 @@ fn help(app: &Application) -> Menu {
 
 pub fn file(app: &Application, workspace_controller: Rc<WorkspaceController>) -> Menu {
     let file_menu = gio::Menu::new();
-    
-    // File operations section
+
+    // New (submenu) + Open section
+    let new_menu = gio::Menu::new();
+    new_menu.append(Some("File"), Some("app.new"));
+    new_menu.append(Some("Folder"), Some("app.new-folder"));
+
     let file_ops_section = gio::Menu::new();
-    file_ops_section.append(Some("New"), Some("app.new"));
+    file_ops_section.append_submenu(Some("New"), &new_menu);
     file_ops_section.append(Some("Open..."), Some("app.open"));
     file_menu.insert_section(0, None, &file_ops_section);
-    
+
+    // Recent Projects (submenu) + Close Project
+    let recent_menu = gio::Menu::new();
+    for path in crate::utils::recent_workspaces::load_recent_workspaces() {
+        let name = path.file_name().and_then(|n| n.to_str()).unwrap_or("Workspace").to_string();
+        let item = gio::MenuItem::new(Some(&name), None);
+        item.set_action_and_target_value(Some("app.open-recent"), Some(&path.to_string_lossy().to_variant()));
+        recent_menu.append_item(&item);
+    }
+
+    let recent_section = gio::Menu::new();
+    recent_section.append_submenu(Some("Recent Projects"), &recent_menu);
+    recent_section.append(Some("Close Project"), Some("app.close-project"));
+    file_menu.insert_section(1, None, &recent_section);
+
     // Save operations section
     let save_ops_section = gio::Menu::new();
     save_ops_section.append(Some("Save"), Some("app.save"));
     save_ops_section.append(Some("Save As..."), Some("app.save-as"));
-    file_menu.insert_section(1, None, &save_ops_section);
-    
+    save_ops_section.append(Some("Save All"), Some("app.save-all"));
+    file_menu.insert_section(2, None, &save_ops_section);
+
+    // Reload section
+    let reload_section = gio::Menu::new();
+    reload_section.append(Some("Reload All from Disk"), Some("app.reload-all"));
+    file_menu.insert_section(3, None, &reload_section);
+
     // Tab operations section
     let tab_ops_section = gio::Menu::new();
     tab_ops_section.append(Some("Close Tab"), Some("app.close-tab"));
-    file_menu.insert_section(2, None, &tab_ops_section);
+    file_menu.insert_section(4, None, &tab_ops_section);
 
     // New file action
     let controller = workspace_controller.clone();
@@ -122,6 +147,14 @@ pub fn file(app: &Application, workspace_controller: Rc<WorkspaceController>) ->
         controller.handle_new_file();
     });
     app.add_action(&new_action);
+
+    // New folder action
+    let controller = workspace_controller.clone();
+    let new_folder_action = gio::SimpleAction::new("new-folder", None);
+    new_folder_action.connect_activate(move |_, _| {
+        controller.handle_new_folder();
+    });
+    app.add_action(&new_folder_action);
 
     // Open file action
     let controller = workspace_controller.clone();
@@ -135,6 +168,35 @@ pub fn file(app: &Application, workspace_controller: Rc<WorkspaceController>) ->
         }
     });
     app.add_action(&open_action);
+
+    // Open Recent Project action (target = workspace path as a string)
+    let controller = workspace_controller.clone();
+    let open_recent_action = gio::SimpleAction::new("open-recent", Some(glib::VariantTy::STRING));
+    open_recent_action.connect_activate(move |_, param| {
+        if let Some(path_str) = param.and_then(|v| v.get::<String>()) {
+            controller.switch_workspace(PathBuf::from(path_str));
+        }
+    });
+    app.add_action(&open_recent_action);
+
+    // Close Project action — back to the workspace picker
+    let app_weak = app.downgrade();
+    let close_project_action = gio::SimpleAction::new("close-project", None);
+    close_project_action.connect_activate(move |_, _| {
+        let Some(app) = app_weak.upgrade() else {
+            return;
+        };
+        if let Some(window) = app.active_window() {
+            window.close();
+        }
+        let app_for_welcome = app.clone();
+        crate::ui::welcome::show_welcome_dialog(&app, move |workspace_path| {
+            crate::utils::recent_workspaces::record_recent_workspace(&workspace_path);
+            let (_window, controller) = crate::ui::layout::build_ui(&app_for_welcome);
+            controller.set_root_path(workspace_path);
+        });
+    });
+    app.add_action(&close_project_action);
 
     // Save action
     let controller = workspace_controller.clone();
@@ -162,6 +224,26 @@ pub fn file(app: &Application, workspace_controller: Rc<WorkspaceController>) ->
     });
     app.add_action(&save_as_action);
 
+    // Save All action
+    let controller = workspace_controller.clone();
+    let save_all_action = gio::SimpleAction::new("save-all", None);
+    save_all_action.connect_activate(move |_, _| {
+        if let Some(workspace) = controller.get_workspace() {
+            workspace.save_all();
+        }
+    });
+    app.add_action(&save_all_action);
+
+    // Reload All from Disk action
+    let controller = workspace_controller.clone();
+    let reload_all_action = gio::SimpleAction::new("reload-all", None);
+    reload_all_action.connect_activate(move |_, _| {
+        if let Some(workspace) = controller.get_workspace() {
+            workspace.reload_all();
+        }
+    });
+    app.add_action(&reload_all_action);
+
     // Add close tab action
     let controller = workspace_controller.clone();
     let app_weak = app.downgrade();
@@ -177,9 +259,12 @@ pub fn file(app: &Application, workspace_controller: Rc<WorkspaceController>) ->
 
     // Add keyboard accelerators
     app.set_accels_for_action("app.new", &["<Primary>n"]);
+    app.set_accels_for_action("app.new-folder", &["<Primary><Shift>n"]);
     app.set_accels_for_action("app.open", &["<Primary>o"]);
     app.set_accels_for_action("app.save", &["<Primary>s"]);
     app.set_accels_for_action("app.save-as", &["<Primary><Shift>s"]);
+    app.set_accels_for_action("app.save-all", &["<Primary><Alt>s"]);
+    app.set_accels_for_action("app.reload-all", &["<Primary><Alt>y"]);
     app.set_accels_for_action("app.close-tab", &["<Primary>w"]);
 
     file_menu

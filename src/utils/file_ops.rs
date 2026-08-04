@@ -74,8 +74,4 @@ impl FileOps {
             receiver.next().await
         }).flatten()
     }
-
-    pub fn new_file() -> (PathBuf, String) {
-        (PathBuf::from("Untitled"), String::new())
-    }
 } 
