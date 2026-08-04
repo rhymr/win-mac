@@ -3,7 +3,7 @@ use gtk::prelude::*;
 use gtk::{gio, glib};
 use rhymr_rs::{css, ui::layout};
 
-pub const APP_ID: &str = "Rhymr";
+pub const APP_ID: &str = "org.gtk_rs.Rhymr";
 
 fn main() -> glib::ExitCode {
     // Register the resource bundle from the compiled resource file
@@ -27,13 +27,21 @@ fn main() -> glib::ExitCode {
 
     // Build the application
     let app = gtk::Application::builder()
-        .application_id("org.gtk_rs.Rhymr")
+        .application_id(APP_ID)
         .flags(gio::ApplicationFlags::HANDLES_OPEN)
         .build();
 
     // Connect activate signal
     app.connect_activate(|app| {
-        let (_window, _controller) = layout::build_ui(app);
+        let app_for_workspace = app.clone();
+
+        // Show the workspace picker first; the main editor layout is only
+        // built once a workspace has actually been chosen.
+        rhymr_rs::ui::welcome::show_welcome_dialog(app, move |workspace_path| {
+            println!("Loaded workspace at: {:?}", workspace_path);
+            let (_window, controller) = layout::build_ui(&app_for_workspace);
+            controller.set_root_path(workspace_path);
+        });
     });
 
     // Run application!

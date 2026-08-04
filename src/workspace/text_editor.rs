@@ -30,6 +30,24 @@ impl TextEditor {
             .vexpand(true)
             .build();
 
+        // Add to TextEditor initialization inside TextEditor::new()
+        let buffer_clone = buffer.clone();
+        let current_path: std::rc::Rc<std::cell::RefCell<Option<std::path::PathBuf>>> =
+            std::rc::Rc::new(std::cell::RefCell::new(None));
+
+        let path_ref = current_path.clone();
+        buffer_clone.connect_changed(move |buf| {
+            if let Some(ref path) = *path_ref.borrow() {
+                let text = buf.text(&buf.start_iter(), &buf.end_iter(), false).to_string();
+                let path = path.clone();
+
+                // Spawn debounced save on GLib main thread
+                glib::timeout_add_local_once(std::time::Duration::from_millis(500), move || {
+                    let _ = std::fs::write(path, text);
+                });
+            }
+        });
+
         source_view.set_css_classes(&["rhyme-editor-view"]);
 
         // Create the syllable count renderer once

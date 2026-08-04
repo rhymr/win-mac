@@ -1,1 +1,2 @@
-pub mod apples_notes;
+pub mod apple_notes;
+pub mod git_ops;

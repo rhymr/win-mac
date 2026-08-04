@@ -13,6 +13,10 @@ gio = { version = "0.22.8" }
 # SCSS -> CSS
 grass = { version = "0.13.4" }
 
+# Git integration (pure Rust bindings)
+git2 = "0.21.0"
+dirs = "6.0.0"
+
 # Futures & Async
 futures-channel = { version = "0.3.33" }
 futures-util = { version = "0.3.33" }

@@ -2,17 +2,20 @@ use crate::utils::file_ops::FileOps;
 use gtk::prelude::*;
 use gtk::Window;
 use std::cell::RefCell;
+use std::path::PathBuf;
 use std::rc::Rc;
 use crate::workspace::workspace::Workspace;
 
 pub struct WorkspaceController {
     pub(crate) workspace: RefCell<Option<Rc<Workspace>>>,
+    root_path: RefCell<Option<PathBuf>>,
 }
 
 impl WorkspaceController {
     pub fn new() -> Self {
         Self {
             workspace: RefCell::new(None),
+            root_path: RefCell::new(None),
         }
     }
 
@@ -25,31 +28,31 @@ impl WorkspaceController {
         self.workspace.borrow().clone()
     }
 
+    /// Point the file tree at the loaded workspace folder.
+    pub fn set_root_path(&self, path: PathBuf) {
+        self.root_path.replace(Some(path.clone()));
+        if let Some(workspace) = self.get_workspace() {
+            if let Some(ref file_tree) = workspace.file_tree {
+                file_tree.set_root_path(path);
+            }
+        }
+    }
+
+    pub fn get_root_path(&self) -> Option<PathBuf> {
+        self.root_path.borrow().clone()
+    }
+
     pub fn handle_new_file(&self) {
         if let Some(workspace) = self.get_workspace() {
             let (path, content) = FileOps::new_file();
-            let page_num = workspace.add_new_tab(&path, &content);
-            
-            // Update the file tree and select the new tab
-            let open_files = workspace.get_open_files();
-            if let Some(ref file_tree) = workspace.file_tree {
-                file_tree.update_file_list(open_files);
-                file_tree.select_row(page_num as i32);
-            }
+            workspace.add_new_tab(&path, &content);
         }
     }
 
     pub fn handle_open_file(&self, window: &Window) {
         if let Some((path, content)) = FileOps::open_file(Some(window.clone())) {
             if let Some(workspace) = self.workspace.borrow().as_ref() {
-                let page_num = workspace.add_new_tab(&path, &content);
-                
-                // Update the file tree and select the new tab
-                let open_files = workspace.get_open_files();
-                if let Some(ref file_tree) = workspace.file_tree {
-                    file_tree.update_file_list(open_files);
-                    file_tree.select_row(page_num as i32);
-                }
+                workspace.add_new_tab(&path, &content);
             }
         }
     }

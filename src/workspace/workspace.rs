@@ -2,6 +2,7 @@ use crate::utils::file_ops::FileOps;
 use gtk::prelude::*;
 use gtk::{Box, Button, Frame, Label, Notebook, TextBuffer, TextView, Window};
 use std::cell::RefCell;
+use std::fs;
 use std::path::{Path, PathBuf};
 use std::rc::Rc;
 use crate::workspace::file_tree::FileTree;
@@ -68,18 +69,34 @@ impl Workspace {
         let page_num = add_new_tab(&self.notebook, path, content, Some(controller));
         self.open_files.borrow_mut().push(path.to_path_buf());
 
-        // Update the file tree and select the new tab
+        // Refresh so the file's row picks up the "open" icon, then highlight it
         if let Some(ref file_tree) = self.file_tree {
-            let open_files = self.get_open_files();
-            file_tree.update_file_list(open_files);
-            file_tree.select_row(page_num as i32);
+            file_tree.refresh();
+            file_tree.select_path(path);
         }
-        
+
         // Ensure notebook shows tabs and has proper styling
         self.notebook.set_show_tabs(true);
         self.notebook.add_css_class("has-open-files");
 
         page_num
+    }
+
+    /// Open `path` in the editor: focus its existing tab if already open,
+    /// otherwise read it from disk and create a new tab.
+    pub fn open_path(&self, path: PathBuf) {
+        if path.is_dir() {
+            return;
+        }
+
+        if let Some(index) = self.open_files.borrow().iter().position(|p| p == &path) {
+            self.switch_to_tab(index);
+            return;
+        }
+
+        if let Ok(content) = fs::read_to_string(&path) {
+            self.add_new_tab(&path, &content);
+        }
     }
 
     pub fn get_current_buffer(&self) -> Option<(TextBuffer, Option<PathBuf>)> {
@@ -97,41 +114,79 @@ impl Workspace {
 
     pub fn update_current_tab_path(&self, new_path: PathBuf) {
         if let Some(current_page) = self.notebook.current_page() {
-            if let Some(tab_label) = new_path.file_name()
-                .and_then(|name| name.to_str())
-                .map(|name| name.to_string())
-            {
-                if let Some(page) = self.notebook.nth_page(Some(current_page)) {
-                    let tab_box = Box::builder()
-                        .orientation(gtk::Orientation::Horizontal)
-                        .spacing(4)  // Reduced spacing
-                        .build();
+            self.set_tab_label(current_page, &new_path);
 
-                    let label = Label::new(Some(&tab_label));
-                    let close_button = Button::builder()
-                        .icon_name("window-close-symbolic")
-                        .css_classes(vec!["flat", "tab-close-button"])
-                        .build();
+            if let Some(path) = self.open_files.borrow_mut().get_mut(current_page as usize) {
+                *path = new_path.clone();
+            }
 
-                    tab_box.append(&label);
-                    tab_box.append(&close_button);
-
-                    // Connect close button signal using controller directly
-                    let controller = self.controller.clone();
-                    close_button.connect_clicked(move |button| {
-                        if let Some(window) = button.root().and_downcast::<Window>() {
-                            controller.handle_close_tab(&window);
-                        }
-                    });
-
-                    self.notebook.set_tab_label(&page, Some(&tab_box));
-                    
-                    if let Some(path) = self.open_files.borrow_mut().get_mut(current_page as usize) {
-                        *path = new_path;
-                    }
-                }
+            // The file may be new on disk (Save As) — rebuild the tree to show it
+            if let Some(ref file_tree) = self.file_tree {
+                file_tree.refresh();
+                file_tree.select_path(&new_path);
             }
         }
+    }
+
+    /// Rewrite `old_path` (a file, or a directory whose contents moved) to
+    /// `new_path` for every open tab affected, keeping tab titles and saves
+    /// pointed at the right place after a file-tree rename.
+    pub fn rename_path(&self, old_path: &Path, new_path: &Path) {
+        let affected: Vec<(u32, PathBuf)> = {
+            let mut open_files = self.open_files.borrow_mut();
+            let mut affected = Vec::new();
+            for (index, path) in open_files.iter_mut().enumerate() {
+                let updated = if path == old_path {
+                    Some(new_path.to_path_buf())
+                } else if let Ok(rel) = path.strip_prefix(old_path) {
+                    Some(new_path.join(rel))
+                } else {
+                    None
+                };
+
+                if let Some(updated) = updated {
+                    *path = updated.clone();
+                    affected.push((index as u32, updated));
+                }
+            }
+            affected
+        };
+
+        for (page_num, path) in affected {
+            self.set_tab_label(page_num, &path);
+        }
+    }
+
+    fn set_tab_label(&self, page_num: u32, path: &Path) {
+        let Some(page) = self.notebook.nth_page(Some(page_num)) else {
+            return;
+        };
+        let Some(name) = path.file_name().and_then(|name| name.to_str()) else {
+            return;
+        };
+
+        let tab_box = Box::builder()
+            .orientation(gtk::Orientation::Horizontal)
+            .spacing(4)
+            .build();
+
+        let label = Label::new(Some(name));
+        let close_button = Button::builder()
+            .icon_name("window-close-symbolic")
+            .css_classes(vec!["flat", "tab-close-button"])
+            .build();
+
+        tab_box.append(&label);
+        tab_box.append(&close_button);
+
+        let controller = self.controller.clone();
+        close_button.connect_clicked(move |button| {
+            if let Some(window) = button.root().and_downcast::<Window>() {
+                controller.handle_close_tab(&window);
+            }
+        });
+
+        self.notebook.set_tab_label(&page, Some(&tab_box));
     }
 
     pub fn get_widget(&self) -> &Frame {
@@ -237,26 +292,13 @@ impl Workspace {
             controller_ref.handle_new_file();
         });
 
-        let notebook_ref = self.notebook.clone();
-        let open_files_ref = self.open_files.clone();
         let controller_ref = self.controller.clone();
 
         open_file_btn.connect_clicked(move |button| {
             if let Some(window) = button.root().and_downcast::<Window>() {
                 if let Some((path, content)) = FileOps::open_file(Some(window.clone())) {
-                    if notebook_ref.n_pages() == 1 && open_files_ref.borrow().is_empty() {
-                        notebook_ref.remove_page(Some(0));
-                    }
-                    let page_num = add_new_tab(&notebook_ref, &*path, &*content, Some(controller_ref.clone()));
-                    open_files_ref.borrow_mut().push(path);
-
-                    // Update file tree and select the new tab
                     if let Some(workspace) = controller_ref.get_workspace() {
-                        if let Some(ref file_tree) = workspace.file_tree {
-                            let open_files = workspace.get_open_files();
-                            file_tree.update_file_list(open_files);
-                            file_tree.select_row(page_num as i32);
-                        }
+                        workspace.add_new_tab(&path, &content);
                     }
                 }
             }
@@ -268,12 +310,6 @@ impl Workspace {
         empty_state.append(&close_tab_box);
 
         empty_state
-    }
-
-    pub fn get_open_files(&self) -> Vec<String> {
-        self.open_files.borrow().iter()
-            .filter_map(|path| path.file_name().and_then(|name| name.to_str()).map(|s| s.to_string()))
-            .collect()
     }
 
     pub fn remove_tab(&self, index: usize) {
@@ -289,10 +325,12 @@ impl Workspace {
             self.notebook.set_show_tabs(false);
         }
 
-        // Update the file tree
+        // The closed file's row should drop back to the "not open" icon
         if let Some(ref file_tree) = self.file_tree {
-            let open_files = self.get_open_files();
-            file_tree.update_file_list(open_files);
+            file_tree.refresh();
+            if let Some((_, Some(path))) = self.get_current_buffer() {
+                file_tree.select_path(&path);
+            }
         }
     }
 

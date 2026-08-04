@@ -51,7 +51,7 @@
 
 .file-icon {
     margin: 0;
-    padding-left: 5px;
+    //padding-left: 5px;
     min-width: 16px;
     min-height: 16px;
     background-color: inherit;
@@ -74,6 +74,7 @@
 .file-tree-header {
     background: var(--bg-dark);
     color: var(--text-bright);
+    padding: 4px 5px;
 }
 
 .file-list-row {
@@ -81,4 +82,32 @@
     margin: 0;
     min-height: 16px;
     background-color: inherit;
+}
+
+.dir-chevron {
+    min-width: 12px;
+    padding-left: 5px;
+    color: var(--text-muted);
+    background-color: inherit;
+}
+
+.dir-label {
+    color: var(--text-not-so-dim);
+    font-weight: bold;
+}
+
+.dir-path {
+    color: var(--text-muted);
+    font-size: 11px;
+    margin-left: 8px;
+}
+
+.rename-entry {
+    margin: 0 4px;
+    padding: 0 4px;
+    min-height: 20px;
+}
+
+.context-menu-item {
+    padding: 6px 12px;
 } 
