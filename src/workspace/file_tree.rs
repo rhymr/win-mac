@@ -65,9 +65,8 @@ impl FileTree {
         self.file_list.connect_row_selected(move |_, row| {
             if let Some(workspace) = &workspace_ref {
                 if let Some(row) = row {
-                    if let index = row.index() {
-                        workspace.switch_to_tab(index as usize);
-                    }
+                    let index = row.index();
+                    workspace.switch_to_tab(index as usize);
                 }
             }
         });

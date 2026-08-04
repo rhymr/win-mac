@@ -14,8 +14,16 @@ fn main() -> glib::ExitCode {
             .expect("Failed to load resources")
     );
 
+    println!(
+        "Current dir = {:?}",
+        std::env::current_dir().unwrap()
+    );
+
     // Compile scss files into css files
-    css::compile_sass().expect("panic message");
+    if let Err(e) = css::compile_sass() {
+        eprintln!("compile_sass failed: {e}");
+        panic!("{e}");
+    }
 
     // Build the application
     let app = gtk::Application::builder()

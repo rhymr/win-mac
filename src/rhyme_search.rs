@@ -6,8 +6,7 @@ use tokio::runtime::Runtime;
 use std::collections::HashMap;
 
 pub struct RhymeSearch {
-    frame: Frame,
-    rhyming_words_list: ListBox,
+    frame: Frame
 }
 
 impl RhymeSearch {
@@ -150,8 +149,7 @@ impl RhymeSearch {
         frame.set_child(Some(&container));
 
         Self {
-            frame,
-            rhyming_words_list,
+            frame
         }
     }
 

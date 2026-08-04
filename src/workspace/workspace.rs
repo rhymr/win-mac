@@ -233,7 +233,7 @@ impl Workspace {
         // Clone the Rc pointers to avoid borrowing issues
         let controller_ref = self.controller.clone();
 
-        new_file_btn.connect_clicked(move |button| {
+        new_file_btn.connect_clicked(move |_button| {
             controller_ref.handle_new_file();
         });
 

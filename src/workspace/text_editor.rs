@@ -7,8 +7,7 @@ use sourceview5::GutterRendererText;
 pub struct TextEditor {
     frame: Frame,
     source_view: SourceView,
-    buffer: SourceBuffer,
-    syllable_renderer: GutterRendererText,
+    buffer: SourceBuffer
 }
 
 impl TextEditor {
@@ -92,8 +91,7 @@ impl TextEditor {
         let editor = Self {
             frame,
             source_view,
-            buffer,
-            syllable_renderer,
+            buffer
         };
 
         // Set initial empty state
@@ -123,15 +121,10 @@ impl TextEditor {
 
 impl Clone for TextEditor {
     fn clone(&self) -> Self {
-        let mut editor = TextEditor::new();
+        let editor = TextEditor::new();
         editor.set_text(&self.get_text());
         editor
     }
-}
-
-fn update_syllable_counts(buffer: &SourceBuffer) {
-    // Queue a redraw of the entire buffer area
-    // buffer.mark_set(&buffer.start_iter(), None);
 }
 
 fn count_syllables(line: &str) -> u32 {

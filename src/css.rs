@@ -1,8 +1,7 @@
-use grass::from_path;
+use grass::Options;
 use gtk::{gdk, CssProvider};
 use std::fs;
 
-// TODO Load Dynamically
 const CSS_FILES: [&str; 8] = [
     "assets/{1}/base.{1}",
     "assets/{1}/editor.{1}",
@@ -17,8 +16,11 @@ const CSS_FILES: [&str; 8] = [
 pub fn compile_sass() -> Result<(), Box<dyn std::error::Error>> {
     for css_file in CSS_FILES {
         let scss_path = css_file.replace("{1}", "scss");
-        let css_output = from_path(scss_path.clone(), &Default::default())?;
-        fs::write(css_file.replace("{1}", "css"), css_output)?;
+        let css_path = css_file.replace("{1}", "css");
+
+        println!("Compiling {scss_path}");
+        let css_output = grass::from_path(&scss_path, &Options::default())?;
+        fs::write(css_path, css_output)?;
     }
 
     Ok(())
@@ -26,17 +28,21 @@ pub fn compile_sass() -> Result<(), Box<dyn std::error::Error>> {
 
 pub fn load_css() -> CssProvider {
     let css_provider = CssProvider::new();
-
-    // Read and combine all CSS files
     let mut combined_css = String::new();
+
     for css_file in CSS_FILES {
-        if let Ok(css_content) = fs::read_to_string(css_file.replace("{1}", "css")) {
-            combined_css.push_str(&css_content);
-            combined_css.push('\n');
+        let scss_path = css_file.replace("{1}", "scss");
+        match grass::from_path(&scss_path, &Options::default()) {
+            Ok(css) => {
+                combined_css.push_str(&css);
+                combined_css.push('\n');
+            }
+            Err(err) => eprintln!("Failed to compile {scss_path}: {err}"),
         }
     }
 
-    css_provider.load_from_data(&combined_css);
+    // `load_from_string` replaces the deprecated `load_from_data`
+    css_provider.load_from_string(&combined_css);
     css_provider
 }
 
