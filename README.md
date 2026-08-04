@@ -2,12 +2,19 @@
 
 **Rhymr** is a lightning-fast, distraction-free text editor built in Rust for poets, lyricists, and MCs. Designed with native GTK4 performance, it combines core songwriting utilities into an integrated workspace.
 
+# ⚠️
+> **Note:** Rhymr is still **work in progress** with **no release available**
+
 ## Features
 
 * **Blazing Fast**: Native Rust Architecture powered by GTK4
 * **Syllable Counter**: Real-time syllable tracking to keep you locked in.
 * **Built-in Rhyme Search**: Instant lookup powered by the Datamuse API.
 * **Multi-Platform**: Built for use on Windows & Mac Systems.
+
+## Showcase
+
+![showcase.png](assets/github/showcase.png)
 
 ### Quick Start
 
