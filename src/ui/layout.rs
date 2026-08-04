@@ -1,7 +1,7 @@
 use gtk::prelude::*;
 use gtk::{Application, Box as GtkBox, Frame, Label, Orientation, Paned, ScrolledWindow, TextBuffer, TextView, WrapMode};
 use std::rc::Rc;
-use crate::rhyme_search::RhymeSearch;
+use crate::ui::rhyme_search::RhymeSearch;
 use crate::workspace::file_tree::FileTree;
 use crate::workspace::workspace::Workspace;
 use crate::workspace::workspace_controller::WorkspaceController;
@@ -26,7 +26,7 @@ pub fn build_ui(app: &Application) -> (gtk::ApplicationWindow, Rc<WorkspaceContr
 
     main_window.set_child(Some(&main_layout));
 
-    crate::menu::setup_menu(app, workspace_controller.clone());
+    crate::ui::menu::setup_menu(app, workspace_controller.clone());
 
     main_window.present();
     

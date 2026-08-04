@@ -1,7 +1,7 @@
 use gio::Resource;
 use gtk::prelude::*;
 use gtk::{gio, glib};
-use rhymr_rs::{css, layout};
+use rhymr_rs::{css, ui::layout};
 
 pub const APP_ID: &str = "Rhymr";
 
