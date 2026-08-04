@@ -142,7 +142,23 @@
 
 /* Popovers (right-click menus, submenus) — GTK's default rounding/shadow is
    stripped by the app-wide `* { border-radius: 0; box-shadow: none; }`
-   reset, so the menu itself needs its own elevated, rounded surface. */
+   reset, so the menu itself needs its own elevated, rounded surface. The
+   native popover/contents nodes still paint their own background+border
+   underneath our `.context-menu` box though, showing through as a
+   mismatched rectangle behind the rounded corners — kill those explicitly. */
+popover {
+    background: none;
+    border: none;
+    box-shadow: none;
+
+    & > contents {
+        background: none;
+        border: none;
+        box-shadow: none;
+        padding: 0;
+    }
+}
+
 .context-menu {
     background-color: #34373c;
     border: 1px solid var(--border-light);

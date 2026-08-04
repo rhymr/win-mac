@@ -1,4 +1,5 @@
 pub mod file_tree;
+mod file_tree_menu;
 pub mod text_editor;
 pub mod workspace;
 pub mod workspace_controller;
