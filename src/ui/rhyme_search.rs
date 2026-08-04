@@ -75,12 +75,9 @@ impl RhymeSearch {
         header.set_css_classes(&["rhyme-search-header"]);
 
         // Starts collapsed
-        let chevron = Label::new(Some("\u{25B8}"));
-        chevron.set_css_classes(&["dir-chevron"]);
         let title = Label::new(Some("Rhyme Search"));
         title.set_css_classes(&["rhyme-search-title"]);
 
-        header.append(&chevron);
         header.append(&title);
         container.set_visible(false);
 
@@ -97,14 +94,12 @@ impl RhymeSearch {
         let header_click = GestureClick::new();
         header_click.set_button(1);
         let container_for_toggle = container.clone();
-        let chevron_for_toggle = chevron.clone();
         let collapsed_for_toggle = collapsed.clone();
         let on_toggle_for_click = on_toggle.clone();
         header_click.connect_released(move |_, _, _, _| {
             let is_collapsed = !collapsed_for_toggle.get();
             collapsed_for_toggle.set(is_collapsed);
             container_for_toggle.set_visible(!is_collapsed);
-            chevron_for_toggle.set_text(if is_collapsed { "\u{25B8}" } else { "\u{25BE}" });
             if let Some(callback) = on_toggle_for_click.borrow().as_ref() {
                 callback(is_collapsed);
             }

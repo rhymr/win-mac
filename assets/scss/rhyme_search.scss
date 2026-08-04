@@ -14,9 +14,10 @@ frame.rhyme-search-container {
     border-left: 1px solid var(--border-dark);
 }
 
+/* Matches .file-tree-panel-header so both panels' headers read as one system */
 .rhyme-search-header {
-    background-color: var(--bg-mid);
-    padding: 4px 8px;
+    background-color: var(--bg-darkest);
+    padding: 8px;
 
     &:hover {
         background-color: var(--bg-hover);

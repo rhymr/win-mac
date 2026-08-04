@@ -81,11 +81,7 @@ impl FileTree {
         let panel_title = Label::new(Some("Project"));
         panel_title.set_css_classes(&["file-tree-panel-title"]);
 
-        let panel_chevron = Label::new(Some("\u{25BE}"));
-        panel_chevron.set_css_classes(&["file-tree-panel-chevron"]);
-
         panel_header.append(&panel_title);
-        panel_header.append(&panel_chevron);
 
         // Create the outer container with margin
         let outer_container = GtkBox::builder()
