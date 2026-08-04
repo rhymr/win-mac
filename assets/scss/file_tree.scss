@@ -42,8 +42,9 @@
     }
 
     & label {
-        padding: 0;
+        padding: 4px 4px 4px 0;
         margin: 0 0 0 4px;
+        text-align: left;
         background-color: inherit;
     }
 }
@@ -57,19 +58,13 @@
 }
 
 .file-tree-container {
-    background-color: var(--bg-dark);
+    background-color: var(--bg-darkest);
     border-right: 1px solid var(--border-dark);
-    border-bottom: 1px solid var(--border-dark);
-
-    & label {
-        padding: 4px 4px 4px 0;
-        text-align: left;
-    }
 }
 
 .file-tree-outer {
-    margin: 5px;
-    background-color: var(--bg-mid);
+    margin: 0 5px 5px;
+    background-color: var(--bg-dark);
 }
 
 .file-tree-inner {

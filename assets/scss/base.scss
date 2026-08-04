@@ -49,8 +49,11 @@ frame {
     }
 
     & > label {
+        text-align: left;
         padding: 5px;
-        background-color: var(--bg-dark);
+        color: var(--text-bright);
+        word-wrap: break-word;
+        background-color: var(--bg-mid);
     }
 }
 

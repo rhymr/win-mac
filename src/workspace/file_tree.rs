@@ -18,19 +18,12 @@ impl FileTree {
             .selection_mode(gtk::SelectionMode::Single)
             .build();
 
-        let label = Label::builder()
-            .label("Workspace Open Files")
-            .css_classes(vec!["file-tree-header"])
-            .height_request(28)
-            .build();
-
         // Create a box to hold both the label and list with consistent background
         let inner_container = GtkBox::builder()
             .orientation(Orientation::Vertical)
             .css_classes(vec!["file-tree-inner"])
             .build();
 
-        inner_container.append(&label);
         inner_container.append(&file_list);
 
         // Create the outer container with margin
@@ -41,6 +34,7 @@ impl FileTree {
         outer_container.append(&inner_container);
 
         let frame = Frame::builder()
+            .label("Opened Files")
             .child(&outer_container)
             .css_classes(vec!["file-tree-container"])
             .build();

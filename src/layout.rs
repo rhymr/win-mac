@@ -86,7 +86,6 @@ fn create_content_layout(workspace_controller: &Rc<WorkspaceController>) -> (Pan
     let bottom_frame = RhymeSearch::new();
     let bottom_widget = bottom_frame.get_widget();
     bottom_widget.add_css_class("bottom-section");
-    let vertical_pane = create_vertical_split(workspace.get_widget(), bottom_widget, 432);
 
     // Create a placeholder frame for the bottom left section
     let bottom_left_frame = create_label_section("Section", "Description");
@@ -95,17 +94,12 @@ fn create_content_layout(workspace_controller: &Rc<WorkspaceController>) -> (Pan
     // Split the left section vertically
     let file_tree_widget = file_tree.get_widget();
     file_tree_widget.add_css_class("left-edge");
-    let left_split = create_vertical_split(file_tree_widget, &bottom_left_frame, 360);
+    let left_split = create_vertical_split(file_tree_widget, bottom_widget, 360);
 
     // Horizontal Split between File Tree and Center
-    let left_and_center_pane = create_horizontal_split(&left_split, &vertical_pane, 320);
+    let left_and_center_pane = create_horizontal_split(&left_split, workspace.get_widget(), 320);
 
-    // Create the final horizontal split with right section
-    let right_frame = create_label_section("Right", "Description");
-    right_frame.set_css_classes(&vec!["right-section", "right-edge"]);
-    let final_split = create_horizontal_split(&left_and_center_pane, &right_frame, 960);
-
-    (final_split, file_tree, workspace)
+    (left_and_center_pane, file_tree, workspace)
 }
 
 pub fn create_horizontal_split(
