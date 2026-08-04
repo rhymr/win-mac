@@ -1,25 +1,30 @@
 use std::collections::BTreeMap;
 use datamuse_api_rs::{DatamuseClient, EndPoint, RelatedType, Vocabulary};
 use gtk::prelude::*;
-use gtk::{Frame, Button, Entry, Label, ListBox, Orientation, ScrolledWindow, Box, pango};
-use tokio::runtime::Runtime;
+use gtk::{Box as GtkBox, Button, Entry, Frame, GestureClick, Label, ListBox, Orientation, ScrolledWindow, pango};
+use std::cell::{Cell, RefCell};
 use std::collections::HashMap;
+use std::rc::Rc;
+use tokio::runtime::Runtime;
 
+#[derive(Clone)]
 pub struct RhymeSearch {
-    frame: Frame
+    frame: Frame,
+    collapsed: Rc<Cell<bool>>,
+    on_toggle: Rc<RefCell<Option<Box<dyn Fn(bool)>>>>,
 }
 
 impl RhymeSearch {
     pub fn new() -> Self {
         // Create a vertical container for the input field and results
-        let container = Box::builder()
+        let container = GtkBox::builder()
             .orientation(Orientation::Vertical)
             .css_classes(vec!["rhyme-search-container-margin", "rhyme-search-container-bg"])
             .spacing(5)
             .build();
 
         // Create a horizontal box for the input field and the button
-        let input_box = Box::builder()
+        let input_box = GtkBox::builder()
             .orientation(Orientation::Horizontal)
             .css_classes(vec!["rhyme-search-container-bg"])
             .spacing(5)
@@ -64,12 +69,47 @@ impl RhymeSearch {
             .child(&rhyming_words_list)
             .build();
 
+        // Collapsible header: chevron + title, click to toggle (same visual
+        // language as the file tree's expand/collapse chevrons).
+        let header = GtkBox::new(Orientation::Horizontal, 6);
+        header.set_css_classes(&["rhyme-search-header"]);
+
+        // Starts collapsed
+        let chevron = Label::new(Some("\u{25B8}"));
+        chevron.set_css_classes(&["dir-chevron"]);
+        let title = Label::new(Some("Rhyme Search"));
+        title.set_css_classes(&["rhyme-search-title"]);
+
+        header.append(&chevron);
+        header.append(&title);
+        container.set_visible(false);
+
         // Create a `Frame` to match the styling of `TextEditor`
         let frame = Frame::builder()
-            .label("Rhyme Search")
             .child(&container)
             .css_classes(vec!["rhyme-search-container"])
             .build();
+        frame.set_label_widget(Some(&header));
+
+        let collapsed = Rc::new(Cell::new(true));
+        let on_toggle: Rc<RefCell<Option<Box<dyn Fn(bool)>>>> = Rc::new(RefCell::new(None));
+
+        let header_click = GestureClick::new();
+        header_click.set_button(1);
+        let container_for_toggle = container.clone();
+        let chevron_for_toggle = chevron.clone();
+        let collapsed_for_toggle = collapsed.clone();
+        let on_toggle_for_click = on_toggle.clone();
+        header_click.connect_released(move |_, _, _, _| {
+            let is_collapsed = !collapsed_for_toggle.get();
+            collapsed_for_toggle.set(is_collapsed);
+            container_for_toggle.set_visible(!is_collapsed);
+            chevron_for_toggle.set_text(if is_collapsed { "\u{25B8}" } else { "\u{25BE}" });
+            if let Some(callback) = on_toggle_for_click.borrow().as_ref() {
+                callback(is_collapsed);
+            }
+        });
+        header.add_controller(header_click);
 
         let handle_submit = move |input: &str| {
             if !input.is_empty() {
@@ -149,12 +189,26 @@ impl RhymeSearch {
         frame.set_child(Some(&container));
 
         Self {
-            frame
+            frame,
+            collapsed,
+            on_toggle,
         }
     }
 
     pub fn get_widget(&self) -> &Frame {
         &self.frame
+    }
+
+    pub fn is_collapsed(&self) -> bool {
+        self.collapsed.get()
+    }
+
+    /// Fires whenever the panel is collapsed/expanded, so the surrounding
+    /// layout can give the freed space back to its neighbor — a Paned
+    /// doesn't automatically resize the split just because a child's
+    /// content was hidden.
+    pub fn connect_toggle(&self, callback: impl Fn(bool) + 'static) {
+        self.on_toggle.replace(Some(Box::new(callback)));
     }
 }
 

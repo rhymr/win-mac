@@ -3,11 +3,18 @@ use gtk::{Frame, ScrolledWindow};
 use sourceview5::{Buffer as SourceBuffer, View as SourceView};
 use sourceview5::prelude::{BufferExt, ViewExt, GutterRendererExt, GutterRendererTextExt};
 use sourceview5::GutterRendererText;
+use std::cell::{Cell, RefCell};
+use std::path::PathBuf;
+use std::rc::Rc;
+
+/// How long to wait after the last keystroke before writing to disk.
+const AUTOSAVE_DEBOUNCE: std::time::Duration = std::time::Duration::from_millis(600);
 
 pub struct TextEditor {
     frame: Frame,
     source_view: SourceView,
-    buffer: SourceBuffer
+    buffer: SourceBuffer,
+    current_path: Rc<RefCell<Option<PathBuf>>>,
 }
 
 impl TextEditor {
@@ -30,22 +37,44 @@ impl TextEditor {
             .vexpand(true)
             .build();
 
-        // Add to TextEditor initialization inside TextEditor::new()
+        // Save `AUTOSAVE_DEBOUNCE` after the last keystroke, so typing
+        // doesn't hit the disk on every character. `current_path` is unset
+        // until `set_path()` is called (after the tab's initial content is
+        // loaded), so the programmatic `set_text()` calls below don't
+        // trigger a spurious save.
+        let current_path: Rc<RefCell<Option<PathBuf>>> = Rc::new(RefCell::new(None));
+
+        // Guards against a save that was already in flight when a newer
+        // keystroke reschedules another one — only the latest write should
+        // actually land.
+        let save_generation = Rc::new(Cell::new(0u64));
+
         let buffer_clone = buffer.clone();
-        let current_path: std::rc::Rc<std::cell::RefCell<Option<std::path::PathBuf>>> =
-            std::rc::Rc::new(std::cell::RefCell::new(None));
-
         let path_ref = current_path.clone();
+        let generation_ref = save_generation.clone();
         buffer_clone.connect_changed(move |buf| {
-            if let Some(ref path) = *path_ref.borrow() {
-                let text = buf.text(&buf.start_iter(), &buf.end_iter(), false).to_string();
-                let path = path.clone();
+            let Some(path) = path_ref.borrow().clone() else {
+                return;
+            };
+            let text = buf.text(&buf.start_iter(), &buf.end_iter(), false).to_string();
 
-                // Spawn debounced save on GLib main thread
-                glib::timeout_add_local_once(std::time::Duration::from_millis(500), move || {
-                    let _ = std::fs::write(path, text);
-                });
-            }
+            let this_generation = generation_ref.get() + 1;
+            generation_ref.set(this_generation);
+
+            let generation_for_timeout = generation_ref.clone();
+            glib::timeout_add_local_once(AUTOSAVE_DEBOUNCE, move || {
+                // A newer edit came in while this was waiting — let that one win.
+                if generation_for_timeout.get() != this_generation {
+                    return;
+                }
+                if let Err(e) = std::fs::write(&path, text) {
+                    eprintln!("Auto-save failed for {path:?}: {e}");
+                    return;
+                }
+                if let Some(root) = find_git_root(&path) {
+                    crate::tools::git_ops::stage_all_changes(&root);
+                }
+            });
         });
 
         source_view.set_css_classes(&["rhyme-editor-view"]);
@@ -109,7 +138,8 @@ impl TextEditor {
         let editor = Self {
             frame,
             source_view,
-            buffer
+            buffer,
+            current_path,
         };
 
         // Set initial empty state
@@ -131,6 +161,13 @@ impl TextEditor {
         ).to_string()
     }
 
+    /// Associate this editor with the file it should auto-save to.
+    /// Deliberately separate from construction/`set_text()`, so loading a
+    /// tab's initial content never triggers a spurious save.
+    pub fn set_path(&self, path: PathBuf) {
+        self.current_path.replace(Some(path));
+    }
+
     pub fn get_widget(&self) -> &Frame {
         &self.frame
     }
@@ -141,8 +178,24 @@ impl Clone for TextEditor {
     fn clone(&self) -> Self {
         let editor = TextEditor::new();
         editor.set_text(&self.get_text());
+        if let Some(path) = self.current_path.borrow().clone() {
+            editor.set_path(path);
+        }
         editor
     }
+}
+
+/// Walk up from a file's directory looking for the workspace's `.git` —
+/// TextEditor doesn't otherwise know the workspace root.
+fn find_git_root(file_path: &std::path::Path) -> Option<PathBuf> {
+    let mut dir = file_path.parent();
+    while let Some(current) = dir {
+        if current.join(".git").is_dir() {
+            return Some(current.to_path_buf());
+        }
+        dir = current.parent();
+    }
+    None
 }
 
 fn count_syllables(line: &str) -> u32 {

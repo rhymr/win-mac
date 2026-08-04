@@ -72,6 +72,7 @@ impl WorkspaceController {
             file_tree.refresh();
             file_tree.select_path(&candidate);
         }
+        self.stage_git(&root);
     }
 
     pub fn handle_new_folder(&self) {
@@ -98,6 +99,11 @@ impl WorkspaceController {
             file_tree.refresh();
             file_tree.select_path(&candidate);
         }
+        self.stage_git(&root);
+    }
+
+    fn stage_git(&self, root: &std::path::Path) {
+        crate::tools::git_ops::stage_all_changes(root);
     }
 
     /// Close every open tab and re-point the workspace at a different
@@ -121,27 +127,60 @@ impl WorkspaceController {
     }
 
     pub fn handle_save_file(&self, window: &Window) {
-        if let Some(workspace) = self.get_workspace() {
-            if let Some((buffer, path)) = workspace.get_current_buffer() {
-                let content = buffer.text(&buffer.start_iter(), &buffer.end_iter(), false);
-                if let Some(existing_path) = path {
-                    FileOps::save_file(content.to_string(), Some(existing_path), Some(window.clone()));
-                } else {
-                    if let Some(new_path) = FileOps::save_file(content.to_string(), None, Some(window.clone())) {
-                        workspace.update_current_tab_path(new_path);
-                    }
-                }
+        let Some(workspace) = self.get_workspace() else {
+            return;
+        };
+        let Some((buffer, path)) = workspace.get_current_buffer() else {
+            return;
+        };
+
+        let content = buffer.text(&buffer.start_iter(), &buffer.end_iter(), false);
+        let saved_path = if let Some(existing_path) = path {
+            let ok = FileOps::save_file(content.to_string(), Some(existing_path.clone()), Some(window.clone())).is_some();
+            ok.then_some(existing_path)
+        } else if let Some(new_path) = FileOps::save_file(content.to_string(), None, Some(window.clone())) {
+            workspace.update_current_tab_path(new_path.clone());
+            Some(new_path)
+        } else {
+            None
+        };
+
+        // A plain content edit+save doesn't rename/create/delete anything,
+        // so nothing else would otherwise ever refresh the tree — without
+        // this, a file's git-modified color only ever reflected whatever
+        // status was true the last time some other operation refreshed it.
+        if let Some(root) = self.get_root_path() {
+            self.stage_git(&root);
+        }
+        if let Some(ref file_tree) = workspace.file_tree {
+            file_tree.refresh();
+            if let Some(path) = saved_path {
+                file_tree.select_path(&path);
             }
         }
     }
 
     pub fn handle_save_as_file(&self, window: &Window) {
-        if let Some(workspace) = self.get_workspace() {
-            if let Some((buffer, _)) = workspace.get_current_buffer() {
-                let content = buffer.text(&buffer.start_iter(), &buffer.end_iter(), false);
-                if let Some(new_path) = FileOps::save_file(content.to_string(), None, Some(window.clone())) {
-                    workspace.update_current_tab_path(new_path);
-                }
+        let Some(workspace) = self.get_workspace() else {
+            return;
+        };
+        let Some((buffer, _)) = workspace.get_current_buffer() else {
+            return;
+        };
+
+        let content = buffer.text(&buffer.start_iter(), &buffer.end_iter(), false);
+        let saved_path = FileOps::save_file(content.to_string(), None, Some(window.clone()));
+        if let Some(ref new_path) = saved_path {
+            workspace.update_current_tab_path(new_path.clone());
+        }
+
+        if let Some(root) = self.get_root_path() {
+            self.stage_git(&root);
+        }
+        if let Some(ref file_tree) = workspace.file_tree {
+            file_tree.refresh();
+            if let Some(path) = saved_path {
+                file_tree.select_path(&path);
             }
         }
     }

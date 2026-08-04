@@ -1,3 +1,4 @@
+use crate::tools::git_ops::GitFileStatus;
 use crate::workspace::workspace::Workspace;
 use gtk::gdk;
 use gtk::glib;
@@ -10,7 +11,7 @@ use gtk::{
 };
 use std::cell::{Cell, RefCell};
 use std::cmp::Ordering;
-use std::collections::HashSet;
+use std::collections::{HashMap, HashSet};
 use std::fs;
 use std::path::{Path, PathBuf};
 use std::rc::Rc;
@@ -31,6 +32,9 @@ pub struct FileTree {
     collapsed: Rc<RefCell<HashSet<PathBuf>>>,
     // Cut/Copy clipboard: the path, and whether it was a Cut (vs Copy).
     clipboard: Rc<RefCell<Option<(PathBuf, bool)>>>,
+    // Uncommitted-changes status vs HEAD, refreshed alongside the tree.
+    // Empty whenever the workspace isn't a git repo.
+    git_statuses: Rc<RefCell<HashMap<PathBuf, GitFileStatus>>>,
     // Decoded once and shared as *paintable data*, not as widgets: a GTK
     // widget can only ever have one parent, so reusing the same Image
     // widget instance across rows silently reparents it away from whichever
@@ -69,11 +73,26 @@ impl FileTree {
 
         inner_container.append(&scrolled_list);
 
+        // Panel header, above the tree itself (the root workspace folder is
+        // its own row further down, inside the list)
+        let panel_header = GtkBox::new(Orientation::Horizontal, 4);
+        panel_header.set_css_classes(&["file-tree-panel-header"]);
+
+        let panel_title = Label::new(Some("Project"));
+        panel_title.set_css_classes(&["file-tree-panel-title"]);
+
+        let panel_chevron = Label::new(Some("\u{25BE}"));
+        panel_chevron.set_css_classes(&["file-tree-panel-chevron"]);
+
+        panel_header.append(&panel_title);
+        panel_header.append(&panel_chevron);
+
         // Create the outer container with margin
         let outer_container = GtkBox::builder()
             .orientation(Orientation::Vertical)
             .css_classes(vec!["file-tree-outer"])
             .build();
+        outer_container.append(&panel_header);
         outer_container.append(&inner_container);
 
         let frame = Frame::builder()
@@ -89,6 +108,7 @@ impl FileTree {
             entries: Rc::new(RefCell::new(Vec::new())),
             collapsed: Rc::new(RefCell::new(HashSet::new())),
             clipboard: Rc::new(RefCell::new(None)),
+            git_statuses: Rc::new(RefCell::new(HashMap::new())),
             folder_icon: Image::from_resource("/org/gtk_rs/rhymr/icons/folder.svg").paintable(),
             file_icon: Image::from_resource("/org/gtk_rs/rhymr/icons/note-active.svg").paintable(),
         }
@@ -135,6 +155,35 @@ impl FileTree {
         let Some(root) = self.root_path.borrow().clone() else {
             return;
         };
+
+        let mut git_statuses = if root.join(".git").is_dir() {
+            crate::tools::git_ops::GitController::new(&root).file_statuses()
+        } else {
+            HashMap::new()
+        };
+
+        // Propagate each file's status up to every ancestor folder (and the
+        // root itself), keeping the highest-priority one where several
+        // descendants disagree — same categories/colors as files.
+        if !git_statuses.is_empty() {
+            let leaf_statuses: Vec<(PathBuf, GitFileStatus)> =
+                git_statuses.iter().map(|(p, s)| (p.clone(), *s)).collect();
+            for (path, status) in leaf_statuses {
+                let mut dir = path.parent();
+                while let Some(current) = dir {
+                    let entry = git_statuses.entry(current.to_path_buf()).or_insert(status);
+                    if status_priority(status) > status_priority(*entry) {
+                        *entry = status;
+                    }
+                    if current == root {
+                        break;
+                    }
+                    dir = current.parent();
+                }
+            }
+        }
+
+        self.git_statuses.replace(git_statuses);
 
         // The workspace root itself is the first, always-visible row; its
         // children (the real entries) collapse/expand underneath it.
@@ -190,6 +239,10 @@ impl FileTree {
             .unwrap_or("Workspace")
             .to_string();
 
+        // Folders pick up the highest-priority status of anything changed
+        // underneath them (see refresh()), same categories/colors as files.
+        let git_status = self.git_statuses.borrow().get(path).copied();
+
         let name_label = if is_dir {
             // Expand/collapse indicator, separate from the folder icon itself
             let expanded = !self.collapsed.borrow().contains(path);
@@ -205,6 +258,12 @@ impl FileTree {
 
             let label = Label::new(Some(&name));
             label.set_css_classes(&["dir-label"]);
+            match git_status {
+                Some(GitFileStatus::New) => label.add_css_class("file-new"),
+                Some(GitFileStatus::Renamed) => label.add_css_class("file-renamed"),
+                Some(GitFileStatus::Modified) => label.add_css_class("file-modified"),
+                None => {}
+            }
             hbox.append(&label);
             label
         } else {
@@ -236,6 +295,12 @@ impl FileTree {
             // so hide it in the tree — commit_rename() adds it back
             // automatically if the user doesn't type their own extension.
             let label = Label::new(Some(strip_txt_extension(&name)));
+            match git_status {
+                Some(GitFileStatus::New) => label.add_css_class("file-new"),
+                Some(GitFileStatus::Renamed) => label.add_css_class("file-renamed"),
+                Some(GitFileStatus::Modified) => label.add_css_class("file-modified"),
+                None => {}
+            }
             hbox.append(&label);
             label
         };
@@ -542,6 +607,7 @@ impl FileTree {
         }
 
         self.collapsed.borrow_mut().remove(&parent_dir);
+        self.stage_git();
 
         // Deferred: this handler fires from a Popover menu-item click, and
         // refresh() destroys the row that popover is parented to — doing
@@ -655,6 +721,8 @@ impl FileTree {
                             if collapsed.remove(&old_path) {
                                 collapsed.insert(new_path);
                             }
+                            drop(collapsed);
+                            self.stage_git();
                         }
                         Err(e) => eprintln!("Failed to rename {old_path:?} to {new_path:?}: {e}"),
                     }
@@ -689,6 +757,7 @@ impl FileTree {
                     workspace.rename_path(&src, &dest);
                 }
                 self.collapsed.borrow_mut().remove(&target_dir);
+                self.stage_git();
 
                 // Deferred for the same reason as create_new_entry: this can
                 // run from a drag-and-drop completing on a Popover-adjacent
@@ -741,6 +810,7 @@ impl FileTree {
         match copy_recursive(&src, &dest) {
             Ok(()) => {
                 self.collapsed.borrow_mut().remove(&target_dir);
+                self.stage_git();
 
                 // Deferred: Paste is invoked from a Popover menu-item click.
                 let file_tree_ref = self.clone();
@@ -815,6 +885,7 @@ impl FileTree {
                     workspace.close_paths_under(&path);
                 }
                 self.collapsed.borrow_mut().remove(&path);
+                self.stage_git();
                 self.refresh_deferred();
             }
             Err(e) => eprintln!("Failed to delete {path:?}: {e}"),
@@ -831,6 +902,13 @@ impl FileTree {
         glib::idle_add_local_once(move || {
             file_tree_ref.refresh();
         });
+    }
+
+    /// Stage every change in the workspace (a no-op if it isn't a git repo).
+    fn stage_git(&self) {
+        if let Some(root) = self.root_path.borrow().clone() {
+            crate::tools::git_ops::stage_all_changes(&root);
+        }
     }
 }
 
@@ -894,6 +972,15 @@ fn strip_txt_extension(name: &str) -> &str {
         &name[..name.len() - 4]
     } else {
         name
+    }
+}
+
+/// Higher wins when a folder's descendants disagree on status.
+fn status_priority(status: GitFileStatus) -> u8 {
+    match status {
+        GitFileStatus::New => 3,
+        GitFileStatus::Renamed => 2,
+        GitFileStatus::Modified => 1,
     }
 }
 

@@ -76,6 +76,22 @@
     padding: 4px 5px;
 }
 
+.file-tree-panel-header {
+    background-color: var(--bg-darkest);
+    padding: 6px 8px 2px;
+}
+
+.file-tree-panel-title {
+    color: var(--text-bright);
+    font-weight: bold;
+    background-color: inherit;
+}
+
+.file-tree-panel-chevron {
+    color: var(--text-muted);
+    background-color: inherit;
+}
+
 .file-list-row {
     padding: 2px 5px;
     margin: 0;
@@ -97,6 +113,19 @@
 .dir-label {
     color: var(--text-not-so-dim);
     font-weight: bold;
+}
+
+/* Uncommitted changes vs HEAD, when the workspace is a git repo */
+.file-modified {
+    color: var(--text-modified);
+}
+
+.file-new {
+    color: var(--text-new);
+}
+
+.file-renamed {
+    color: var(--text-renamed);
 }
 
 .dir-path {

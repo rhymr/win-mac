@@ -13,6 +13,10 @@ pub struct Workspace {
     frame: Frame,
     pub(crate) notebook: Notebook,
     pub(crate) open_files: Rc<RefCell<Vec<PathBuf>>>,
+    // Index-aligned with open_files (and with notebook pages, once the
+    // empty-state placeholder page is accounted for) — lets path updates
+    // (rename, Save As) retarget an already-open tab's auto-save.
+    text_editors: Rc<RefCell<Vec<TextEditor>>>,
     controller: Rc<WorkspaceController>,
     pub(crate) file_tree: Option<FileTree>,
 }
@@ -35,6 +39,7 @@ impl Workspace {
                 .build(),
             notebook: notebook.clone(),
             open_files: open_files.clone(),
+            text_editors: Rc::new(RefCell::new(Vec::new())),
             controller,
             file_tree,
         };
@@ -66,8 +71,9 @@ impl Workspace {
         
         // Ensure the controller is still referenced
         let controller = self.controller.clone();
-        let page_num = add_new_tab(&self.notebook, path, content, Some(controller));
+        let (page_num, text_editor) = add_new_tab(&self.notebook, path, content, Some(controller));
         self.open_files.borrow_mut().push(path.to_path_buf());
+        self.text_editors.borrow_mut().push(text_editor);
 
         // Refresh so the file's row picks up the "open" icon, then highlight it
         if let Some(ref file_tree) = self.file_tree {
@@ -101,13 +107,13 @@ impl Workspace {
 
     pub fn get_current_buffer(&self) -> Option<(TextBuffer, Option<PathBuf>)> {
         let current_page = self.notebook.current_page()?;
-        let scrolled_window = self.notebook.nth_page(Some(current_page))?;
-        let text_view = scrolled_window.first_child()?.downcast::<TextView>().ok()?;
-        
+        let page = self.notebook.nth_page(Some(current_page))?;
+        let text_view = text_view_for_page(&page)?;
+
         // Get the buffer and path
         let buffer = text_view.buffer();
         let path = self.open_files.borrow().get(current_page as usize).cloned();
-        
+
         // Return the tuple directly since we already handled the Option
         Some((buffer, path))
     }
@@ -119,7 +125,7 @@ impl Workspace {
             let Some(page) = self.notebook.nth_page(Some(index as u32)) else {
                 continue;
             };
-            let Some(text_view) = page.first_child().and_then(|w| w.downcast::<TextView>().ok()) else {
+            let Some(text_view) = text_view_for_page(&page) else {
                 continue;
             };
             let buffer = text_view.buffer();
@@ -127,6 +133,13 @@ impl Workspace {
             if let Err(e) = fs::write(path, content.as_str()) {
                 eprintln!("Failed to save {path:?}: {e}");
             }
+        }
+
+        if let Some(root) = self.controller.get_root_path() {
+            crate::tools::git_ops::stage_all_changes(&root);
+        }
+        if let Some(ref file_tree) = self.file_tree {
+            file_tree.refresh();
         }
     }
 
@@ -138,7 +151,7 @@ impl Workspace {
             let Some(page) = self.notebook.nth_page(Some(index as u32)) else {
                 continue;
             };
-            let Some(text_view) = page.first_child().and_then(|w| w.downcast::<TextView>().ok()) else {
+            let Some(text_view) = text_view_for_page(&page) else {
                 continue;
             };
             match fs::read_to_string(path) {
@@ -154,6 +167,10 @@ impl Workspace {
 
             if let Some(path) = self.open_files.borrow_mut().get_mut(current_page as usize) {
                 *path = new_path.clone();
+            }
+            // Retarget auto-save to the new path (Save As)
+            if let Some(editor) = self.text_editors.borrow().get(current_page as usize) {
+                editor.set_path(new_path.clone());
             }
 
             // The file may be new on disk (Save As) — rebuild the tree to show it
@@ -190,6 +207,10 @@ impl Workspace {
 
         for (page_num, path) in affected {
             self.set_tab_label(page_num, &path);
+            // Retarget auto-save to the new path
+            if let Some(editor) = self.text_editors.borrow().get(page_num as usize) {
+                editor.set_path(path);
+            }
         }
     }
 
@@ -371,7 +392,8 @@ impl Workspace {
         // Remove the tab
         self.notebook.remove_page(Some(index as u32));
         self.open_files.borrow_mut().remove(index);
-        
+        self.text_editors.borrow_mut().remove(index);
+
         // Show empty state if no more tabs
         if self.notebook.n_pages() <= 0 {
             self.notebook.remove_css_class("has-open-files");
@@ -396,11 +418,15 @@ impl Workspace {
     }
 }
 
-fn add_new_tab(notebook: &Notebook, path: &Path, content: &str, controller: Option<Rc<WorkspaceController>>) -> u32 {
+fn add_new_tab(notebook: &Notebook, path: &Path, content: &str, controller: Option<Rc<WorkspaceController>>) -> (u32, TextEditor) {
     // Create text editor
     let text_editor = TextEditor::new();
     text_editor.set_text(content);
-    
+    // Set after set_text(): loading the initial content also fires the
+    // buffer's "changed" signal, and we don't want that mistaken for a
+    // real edit that needs auto-saving.
+    text_editor.set_path(path.to_path_buf());
+
     // Create tab label box
     let tab_box = Box::builder()
         .orientation(gtk::Orientation::Horizontal)
@@ -437,6 +463,15 @@ fn add_new_tab(notebook: &Notebook, path: &Path, content: &str, controller: Opti
     notebook.set_show_tabs(true);
     notebook.add_css_class("has-open-files");
     notebook.set_current_page(Some(page_num));
-    
-    page_num
-} 
+
+    (page_num, text_editor)
+}
+
+/// Descend from a notebook page's root widget to its actual TextView
+/// (SourceView, which extends TextView). A tab page is
+/// `Frame -> ScrolledWindow -> SourceView` (see TextEditor) — this needs
+/// *two* `first_child()` hops, not one, since the ScrolledWindow itself
+/// obviously isn't a TextView.
+fn text_view_for_page(page: &gtk::Widget) -> Option<TextView> {
+    page.first_child()?.first_child()?.downcast::<TextView>().ok()
+}

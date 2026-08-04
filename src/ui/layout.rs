@@ -1,5 +1,6 @@
 use gtk::prelude::*;
-use gtk::{Application, Orientation, Paned};
+use gtk::{Application, Box as GtkBox, Label, Orientation, Paned};
+use std::cell::Cell;
 use std::rc::Rc;
 use crate::ui::rhyme_search::RhymeSearch;
 use crate::workspace::file_tree::FileTree;
@@ -32,14 +33,31 @@ pub fn build_ui(app: &Application) -> (gtk::ApplicationWindow, Rc<WorkspaceContr
     (main_window, workspace_controller)
 }
 
-pub fn create_main_layout() -> (Paned, Rc<WorkspaceController>) {
+pub fn create_main_layout() -> (GtkBox, Rc<WorkspaceController>) {
     // Create the workspace controller
     let workspace_controller = Rc::new(WorkspaceController::new());
 
     // Create the main content area: file tree on the left, editor on the right
     let (content_pane, _file_tree, _workspace) = create_content_layout(&workspace_controller);
 
-    (content_pane, workspace_controller)
+    let main_box = GtkBox::new(Orientation::Vertical, 0);
+    main_box.append(&content_pane);
+    main_box.append(&create_status_bar());
+
+    (main_box, workspace_controller)
+}
+
+fn create_status_bar() -> GtkBox {
+    let status_bar = GtkBox::builder()
+        .orientation(Orientation::Horizontal)
+        .css_classes(vec!["status-bar"])
+        .build();
+
+    let status_label = Label::new(Some("Rhymr"));
+    status_label.set_css_classes(&["status-text"]);
+    status_bar.append(&status_label);
+
+    status_bar
 }
 
 // Create the file tree / rhyme search / editor split
@@ -58,7 +76,7 @@ fn create_content_layout(workspace_controller: &Rc<WorkspaceController>) -> (Pan
 
     workspace_controller.set_workspace(workspace.clone());
 
-    // Rhyme search sits below the file tree on the left
+    // Rhyme search sits below the file tree on the left, starting collapsed
     let rhyme_search = RhymeSearch::new();
     let rhyme_search_widget = rhyme_search.get_widget();
     rhyme_search_widget.add_css_class("bottom-section");
@@ -66,6 +84,56 @@ fn create_content_layout(workspace_controller: &Rc<WorkspaceController>) -> (Pan
     let file_tree_widget = file_tree.get_widget();
     file_tree_widget.add_css_class("left-edge");
     let left_split = create_vertical_split(file_tree_widget, rhyme_search_widget, 360);
+
+    // Collapsing the panel hides its content, but a Paned doesn't
+    // automatically resize the split just because a child got smaller, and
+    // `shrink_end_child(false)` only limits how far a user *drag* can go —
+    // it does NOT stop a plain `set_position()` call from squeezing the end
+    // child below its minimum (which was swallowing the header entirely).
+    // So the collapsed position has to be computed explicitly: total height
+    // minus the header's own minimum height.
+    let rhyme_search_widget_owned = rhyme_search_widget.clone();
+    let collapsed_position = move |paned: &Paned| -> i32 {
+        let total = paned.height();
+        let (_, header_height, _, _) = rhyme_search_widget_owned.measure(Orientation::Vertical, -1);
+        (total - header_height).max(0)
+    };
+
+    // The window isn't realized yet at construction time, so `paned.height()`
+    // would read 0 — defer the initial collapse to the next main-loop tick,
+    // by which point the first real allocation has happened.
+    let paned_for_init = left_split.clone();
+    let collapsed_position_for_init = collapsed_position.clone();
+    glib::idle_add_local_once(move || {
+        paned_for_init.set_position(collapsed_position_for_init(&paned_for_init));
+    });
+
+    // Lock the divider while collapsed: a drag attempt still moves
+    // `position` internally, so snap it straight back instead of letting
+    // the user resize a panel with nothing visible in it.
+    let rhyme_search_for_lock = rhyme_search.clone();
+    let collapsed_position_for_lock = collapsed_position.clone();
+    left_split.connect_position_notify(move |paned| {
+        if rhyme_search_for_lock.is_collapsed() {
+            let desired = collapsed_position_for_lock(paned);
+            if paned.position() != desired {
+                paned.set_position(desired);
+            }
+        }
+    });
+
+    // Restore this height when the panel is expanded again.
+    let expanded_position = Rc::new(Cell::new(360));
+    let paned_for_toggle = left_split.clone();
+    let expanded_position_for_toggle = expanded_position.clone();
+    rhyme_search.connect_toggle(move |collapsed| {
+        if collapsed {
+            expanded_position_for_toggle.set(paned_for_toggle.position());
+            paned_for_toggle.set_position(collapsed_position(&paned_for_toggle));
+        } else {
+            paned_for_toggle.set_position(expanded_position_for_toggle.get());
+        }
+    });
 
     // Horizontal split between the left column and the editor
     let main_pane = create_horizontal_split(&left_split, workspace.get_widget(), 320);
