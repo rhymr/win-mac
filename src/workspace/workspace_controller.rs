@@ -127,7 +127,9 @@ impl WorkspaceController {
     }
 
     fn stage_git(&self, root: &std::path::Path) {
-        crate::tools::git_ops::stage_all_changes(root);
+        if crate::utils::settings::Settings::load().git_autostage {
+            crate::tools::git_ops::stage_all_changes(root);
+        }
     }
 
     /// Close every open tab and re-point the workspace at a different

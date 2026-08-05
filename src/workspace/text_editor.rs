@@ -19,6 +19,8 @@ pub struct TextEditor {
 
 impl TextEditor {
     pub fn new() -> Self {
+        let settings = crate::utils::settings::Settings::load();
+
         // Create the source buffer and view
         let buffer = SourceBuffer::new(None);
         let source_view = SourceView::builder()
@@ -26,9 +28,9 @@ impl TextEditor {
             .monospace(true)
             .show_line_numbers(true)
             .show_line_marks(true)
-            .tab_width(4)
-            .auto_indent(true)
-            .indent_width(4)
+            .tab_width(settings.tab_width)
+            .auto_indent(settings.auto_indent)
+            .indent_width(settings.tab_width as i32)
             .highlight_current_line(true)
             .background_pattern(sourceview5::BackgroundPatternType::None)
             .smart_backspace(true)
@@ -71,48 +73,56 @@ impl TextEditor {
                     eprintln!("Auto-save failed for {path:?}: {e}");
                     return;
                 }
-                if let Some(root) = find_git_root(&path) {
-                    crate::tools::git_ops::stage_all_changes(&root);
+                if crate::utils::settings::Settings::load().git_autostage {
+                    if let Some(root) = find_git_root(&path) {
+                        crate::tools::git_ops::stage_all_changes(&root);
+                    }
                 }
             });
         });
 
         source_view.set_css_classes(&["rhyme-editor-view"]);
 
-        // Dictionary word completion is disabled for now — the provider
-        // (src/workspace/completion.rs) is still there, just not registered.
+        if settings.word_completion {
+            let completion = ViewExt::completion(&source_view);
+            completion.add_provider(&crate::workspace::completion::WordCompletionProvider::new());
+        }
 
-        crate::workspace::rhyme_highlight::attach(&buffer);
+        if settings.rhyme_highlighting {
+            crate::workspace::rhyme_highlight::attach(&buffer);
+        }
 
-        // Create the syllable count renderer once
-        let syllable_renderer = GutterRendererText::new();
-        syllable_renderer.set_css_classes(&["syllable-count"]);
-        syllable_renderer.set_xalign(0.5);
-        syllable_renderer.set_yalign(0.5);
+        if settings.show_syllable_gutter {
+            // Create the syllable count renderer once
+            let syllable_renderer = GutterRendererText::new();
+            syllable_renderer.set_css_classes(&["syllable-count"]);
+            syllable_renderer.set_xalign(0.5);
+            syllable_renderer.set_yalign(0.5);
 
-        // Connect the query-data handler to update syllable counts
-        let buffer_clone = buffer.clone();
-        syllable_renderer.connect_query_data(move |renderer, _line_obj, line_num| {
-            if let Some(iter) = buffer_clone.iter_at_line(line_num as i32) {
-                let end_iter = if let Some(next_iter) = buffer_clone.iter_at_line(line_num as i32 + 1) {
-                    next_iter
-                } else {
-                    buffer_clone.end_iter()
-                };
-                
-                let line = buffer_clone.text(&iter, &end_iter, false);
-                if !line.trim().is_empty() {
-                    let syllables = crate::utils::text_stats::count_syllables(&line);
-                    renderer.set_text(&syllables.to_string());
-                } else {
-                    renderer.set_text("");
+            // Connect the query-data handler to update syllable counts
+            let buffer_clone = buffer.clone();
+            syllable_renderer.connect_query_data(move |renderer, _line_obj, line_num| {
+                if let Some(iter) = buffer_clone.iter_at_line(line_num as i32) {
+                    let end_iter = if let Some(next_iter) = buffer_clone.iter_at_line(line_num as i32 + 1) {
+                        next_iter
+                    } else {
+                        buffer_clone.end_iter()
+                    };
+
+                    let line = buffer_clone.text(&iter, &end_iter, false);
+                    if !line.trim().is_empty() {
+                        let syllables = crate::utils::text_stats::count_syllables(&line);
+                        renderer.set_text(&syllables.to_string());
+                    } else {
+                        renderer.set_text("");
+                    }
                 }
-            }
-        });
+            });
 
-        // Get the gutter and add the renderer right after line numbers
-        let gutter = ViewExt::gutter(&source_view, gtk::TextWindowType::Left);
-        gutter.insert(&syllable_renderer, -20); // Position right after line numbers (-30)
+            // Get the gutter and add the renderer right after line numbers
+            let gutter = ViewExt::gutter(&source_view, gtk::TextWindowType::Left);
+            gutter.insert(&syllable_renderer, -20); // Position right after line numbers (-30)
+        }
 
         // Disable bracket matching
         buffer.set_highlight_matching_brackets(false);

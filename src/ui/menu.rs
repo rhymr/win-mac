@@ -157,6 +157,21 @@ pub fn file(app: &Application, workspace_controller: Rc<WorkspaceController>) ->
     tab_ops_section.append(Some("Close Tab"), Some("app.close-tab"));
     file_menu.insert_section(4, None, &tab_ops_section);
 
+    // Preferences section
+    let preferences_section = gio::Menu::new();
+    preferences_section.append(Some("Preferences…"), Some("app.preferences"));
+    file_menu.insert_section(5, None, &preferences_section);
+
+    // Preferences action
+    let app_weak = app.downgrade();
+    let preferences_action = gio::SimpleAction::new("preferences", None);
+    preferences_action.connect_activate(move |_, _| {
+        if let Some(app) = app_weak.upgrade() {
+            crate::ui::settings_dialog::show_settings_dialog(&app);
+        }
+    });
+    app.add_action(&preferences_action);
+
     // New file action
     let controller = workspace_controller.clone();
     let new_action = gio::SimpleAction::new("new", None);
@@ -283,6 +298,7 @@ pub fn file(app: &Application, workspace_controller: Rc<WorkspaceController>) ->
     app.set_accels_for_action("app.save-all", &[&accel("", "s")]);
     app.set_accels_for_action("app.reload-all", &[&accel("<Alt>", "y")]);
     app.set_accels_for_action("app.close-tab", &[&accel("", "w")]);
+    app.set_accels_for_action("app.preferences", &[&accel("", "comma")]);
 
     file_menu
 } 
