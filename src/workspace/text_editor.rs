@@ -79,6 +79,11 @@ impl TextEditor {
 
         source_view.set_css_classes(&["rhyme-editor-view"]);
 
+        // Dictionary word completion is disabled for now — the provider
+        // (src/workspace/completion.rs) is still there, just not registered.
+
+        crate::workspace::rhyme_highlight::attach(&buffer);
+
         // Create the syllable count renderer once
         let syllable_renderer = GutterRendererText::new();
         syllable_renderer.set_css_classes(&["syllable-count"]);
@@ -97,7 +102,7 @@ impl TextEditor {
                 
                 let line = buffer_clone.text(&iter, &end_iter, false);
                 if !line.trim().is_empty() {
-                    let syllables = count_syllables(&line);
+                    let syllables = crate::utils::text_stats::count_syllables(&line);
                     renderer.set_text(&syllables.to_string());
                 } else {
                     renderer.set_text("");
@@ -172,6 +177,12 @@ impl TextEditor {
         &self.frame
     }
 
+    /// Notify `f` on every buffer edit — used by the status bar's live
+    /// word-count listener, independent of the autosave debounce above.
+    pub fn connect_changed(&self, f: impl Fn() + 'static) {
+        self.buffer.connect_changed(move |_| f());
+    }
+
 }
 
 impl Clone for TextEditor {
@@ -196,22 +207,4 @@ fn find_git_root(file_path: &std::path::Path) -> Option<PathBuf> {
         dir = current.parent();
     }
     None
-}
-
-fn count_syllables(line: &str) -> u32 {
-    // Basic syllable counting - you might want to use a more sophisticated algorithm
-    // or integrate with a pronunciation dictionary
-    let mut count = 0;
-    let vowels = ['a', 'e', 'i', 'o', 'u', 'y', 'A', 'E', 'I', 'O', 'U', 'Y'];
-    let mut prev_was_vowel = false;
-
-    for c in line.chars() {
-        let is_vowel = vowels.contains(&c);
-        if is_vowel && !prev_was_vowel {
-            count += 1;
-        }
-        prev_was_vowel = is_vowel;
-    }
-
-    count
 }

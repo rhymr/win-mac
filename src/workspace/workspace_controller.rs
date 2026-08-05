@@ -10,6 +10,7 @@ use crate::workspace::workspace::Workspace;
 pub struct WorkspaceController {
     pub(crate) workspace: RefCell<Option<Rc<Workspace>>>,
     root_path: RefCell<Option<PathBuf>>,
+    word_count_listener: RefCell<Option<Box<dyn Fn(u32)>>>,
 }
 
 impl WorkspaceController {
@@ -17,6 +18,29 @@ impl WorkspaceController {
         Self {
             workspace: RefCell::new(None),
             root_path: RefCell::new(None),
+            word_count_listener: RefCell::new(None),
+        }
+    }
+
+    /// Subscribe to the active tab's word count — called whenever the
+    /// active tab switches or its text changes.
+    pub fn set_word_count_listener(&self, listener: impl Fn(u32) + 'static) {
+        self.word_count_listener.replace(Some(Box::new(listener)));
+    }
+
+    /// Recompute the active tab's word count and notify the listener.
+    pub fn refresh_word_count(&self) {
+        let count = self
+            .get_workspace()
+            .and_then(|workspace| workspace.get_current_buffer())
+            .map(|(buffer, _)| {
+                let text = buffer.text(&buffer.start_iter(), &buffer.end_iter(), false);
+                crate::utils::text_stats::count_words(&text)
+            })
+            .unwrap_or(0);
+
+        if let Some(listener) = self.word_count_listener.borrow().as_ref() {
+            listener(count);
         }
     }
 

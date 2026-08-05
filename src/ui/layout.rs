@@ -42,12 +42,12 @@ pub fn create_main_layout() -> (GtkBox, Rc<WorkspaceController>) {
 
     let main_box = GtkBox::new(Orientation::Vertical, 0);
     main_box.append(&content_pane);
-    main_box.append(&create_status_bar());
+    main_box.append(&create_status_bar(&workspace_controller));
 
     (main_box, workspace_controller)
 }
 
-fn create_status_bar() -> GtkBox {
+fn create_status_bar(workspace_controller: &Rc<WorkspaceController>) -> GtkBox {
     let status_bar = GtkBox::builder()
         .orientation(Orientation::Horizontal)
         .css_classes(vec!["status-bar"])
@@ -56,6 +56,18 @@ fn create_status_bar() -> GtkBox {
     let status_label = Label::new(Some("Rhymr"));
     status_label.set_css_classes(&["status-text"]);
     status_bar.append(&status_label);
+
+    let word_count_label = Label::new(Some("0 words"));
+    word_count_label.set_css_classes(&["status-text", "word-count"]);
+    word_count_label.set_hexpand(true);
+    word_count_label.set_halign(gtk::Align::End);
+    status_bar.append(&word_count_label);
+
+    workspace_controller.set_word_count_listener(move |count| {
+        let label = if count == 1 { "1 word".to_string() } else { format!("{count} words") };
+        word_count_label.set_text(&label);
+    });
+    workspace_controller.refresh_word_count();
 
     status_bar
 }

@@ -51,6 +51,12 @@ impl Workspace {
             notebook.set_show_tabs(false);
         }
 
+        // Keep the status bar's word count pointed at whichever tab is active.
+        let controller_for_switch = workspace.controller.clone();
+        notebook.connect_switch_page(move |_, _, _| {
+            controller_for_switch.refresh_word_count();
+        });
+
         workspace
     }
 
@@ -84,6 +90,8 @@ impl Workspace {
         // Ensure notebook shows tabs and has proper styling
         self.notebook.set_show_tabs(true);
         self.notebook.add_css_class("has-open-files");
+
+        self.controller.refresh_word_count();
 
         page_num
     }
@@ -409,6 +417,8 @@ impl Workspace {
                 file_tree.select_path(&path);
             }
         }
+
+        self.controller.refresh_word_count();
     }
 
     pub fn switch_to_tab(&self, index: usize) {
@@ -453,6 +463,16 @@ fn add_new_tab(notebook: &Notebook, path: &Path, content: &str, controller: Opti
 
     // Connect close button signal
     if let Some(controller) = controller {
+        // Only the active tab's edits should move the status bar's word
+        // count — background tabs keep typing (autosave) without it.
+        let notebook_for_word_count = notebook.clone();
+        let controller_for_word_count = controller.clone();
+        text_editor.connect_changed(move || {
+            if notebook_for_word_count.current_page() == Some(page_num) {
+                controller_for_word_count.refresh_word_count();
+            }
+        });
+
         close_button.connect_clicked(move |button| {
             if let Some(window) = button.root().and_downcast::<Window>() {
                 controller.handle_close_tab(&window);

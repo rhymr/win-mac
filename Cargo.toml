@@ -25,6 +25,12 @@ tokio = { version = "1.53.1", features = ["full"] }
 # Rhyme Search API
 datamuse-api-rs = { version = "2.1.2" }
 
+# Completions, syllable counting & rhyme highlighting
+fancy-regex = { version = "0.13" }
+cmudict-fast = { version = "0.8.0" }
+rphonetic = { version = "3.0.6" }
+hypher = { version = "0.1.7", default-features = false, features = ["alloc", "english"] }
+
 [build-dependencies]
 glib-build-tools = { version = "0.22.8" }
 grass = { version = "0.13.4" }
