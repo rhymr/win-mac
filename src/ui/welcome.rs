@@ -66,6 +66,7 @@ where
     let nav_list = ListBox::builder()
         .selection_mode(gtk::SelectionMode::Single)
         .css_classes(vec!["sidebar-nav"])
+        .vexpand(true)
         .build();
 
     let projects_label = Label::builder()
@@ -78,8 +79,26 @@ where
     nav_list.append(&projects_label);
     nav_list.select_row(nav_list.row_at_index(0).as_ref());
 
+    // Settings — pinned to the bottom of the sidebar (nav_list above it is
+    // vexpand, so this sits flush against the sidebar's bottom edge).
+    let settings_btn = Button::builder()
+        .label("\u{2699}")
+        .tooltip_text("Preferences")
+        .halign(Align::Start)
+        .css_classes(vec!["flat", "welcome-settings-button"])
+        .margin_start(12)
+        .margin_end(12)
+        .margin_top(8)
+        .margin_bottom(12)
+        .build();
+    let app_for_settings = app.clone();
+    settings_btn.connect_clicked(move |_| {
+        crate::ui::settings_dialog::show_settings_dialog(&app_for_settings);
+    });
+
     sidebar.append(&brand_box);
     sidebar.append(&nav_list);
+    sidebar.append(&settings_btn);
 
     // ==========================================
     // 2. MAIN CONTENT AREA (Projects View)

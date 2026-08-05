@@ -4,7 +4,7 @@ use std::path::PathBuf;
 /// User-configurable app behavior, persisted across launches. New
 /// `TextEditor`s read this at construction time — changing a setting takes
 /// effect for tabs opened afterward, not ones already open.
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, PartialEq)]
 pub struct Settings {
     pub show_syllable_gutter: bool,
     pub rhyme_highlighting: bool,

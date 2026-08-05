@@ -210,23 +210,57 @@ pub fn show_settings_dialog(app: &Application) {
         dialog_for_cancel.close();
     });
 
-    let apply: Rc<dyn Fn()> = Rc::new({
+    // Reads the dialog's current widget state into a `Settings` value —
+    // shared by the dirty-check below and by the actual save, so there's
+    // one place that knows how to turn widgets into a `Settings`.
+    let read_current: Rc<dyn Fn() -> Settings> = Rc::new({
         let gutter_toggle = gutter_toggle.clone();
         let auto_indent_toggle = auto_indent_toggle.clone();
         let tab_width_spin = tab_width_spin.clone();
         let rhyme_toggle = rhyme_toggle.clone();
         let completion_toggle = completion_toggle.clone();
         let git_toggle = git_toggle.clone();
+        move || Settings {
+            show_syllable_gutter: gutter_toggle.is_active(),
+            rhyme_highlighting: rhyme_toggle.is_active(),
+            word_completion: completion_toggle.is_active(),
+            auto_indent: auto_indent_toggle.is_active(),
+            tab_width: tab_width_spin.value() as u32,
+            git_autostage: git_toggle.is_active(),
+        }
+    });
+
+    // What's currently saved on disk — Apply is only enabled once the
+    // widgets diverge from this, and it's refreshed after every save so
+    // Apply goes back to disabled until something changes again.
+    let baseline = Rc::new(std::cell::Cell::new(settings));
+
+    apply_btn.set_sensitive(false);
+    let update_apply_sensitivity: Rc<dyn Fn()> = Rc::new({
+        let apply_btn = apply_btn.clone();
+        let read_current = read_current.clone();
+        let baseline = baseline.clone();
         move || {
-            Settings {
-                show_syllable_gutter: gutter_toggle.is_active(),
-                rhyme_highlighting: rhyme_toggle.is_active(),
-                word_completion: completion_toggle.is_active(),
-                auto_indent: auto_indent_toggle.is_active(),
-                tab_width: tab_width_spin.value() as u32,
-                git_autostage: git_toggle.is_active(),
-            }
-            .save();
+            apply_btn.set_sensitive(read_current() != baseline.get());
+        }
+    });
+
+    for toggle in [&gutter_toggle, &auto_indent_toggle, &rhyme_toggle, &completion_toggle, &git_toggle] {
+        let f = update_apply_sensitivity.clone();
+        toggle.connect_toggled(move |_| f());
+    }
+    let f = update_apply_sensitivity.clone();
+    tab_width_spin.connect_value_changed(move |_| f());
+
+    let apply: Rc<dyn Fn()> = Rc::new({
+        let read_current = read_current.clone();
+        let baseline = baseline.clone();
+        let update_apply_sensitivity = update_apply_sensitivity.clone();
+        move || {
+            let current = read_current();
+            current.save();
+            baseline.set(current);
+            update_apply_sensitivity();
         }
     });
 
