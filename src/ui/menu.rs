@@ -164,10 +164,11 @@ pub fn file(app: &Application, workspace_controller: Rc<WorkspaceController>) ->
 
     // Preferences action
     let app_weak = app.downgrade();
+    let controller = workspace_controller.clone();
     let preferences_action = gio::SimpleAction::new("preferences", None);
     preferences_action.connect_activate(move |_, _| {
         if let Some(app) = app_weak.upgrade() {
-            crate::ui::settings_dialog::show_settings_dialog(&app);
+            crate::ui::settings_dialog::show_settings_dialog(&app, Some(controller.clone()));
         }
     });
     app.add_action(&preferences_action);

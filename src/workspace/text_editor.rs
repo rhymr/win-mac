@@ -1,6 +1,9 @@
+use crate::utils::settings::Settings;
+use crate::workspace::completion::WordCompletionProvider;
+use crate::workspace::rhyme_highlight::RhymeHighlight;
 use gtk::prelude::*;
 use gtk::{Frame, ScrolledWindow};
-use sourceview5::{Buffer as SourceBuffer, View as SourceView};
+use sourceview5::{Buffer as SourceBuffer, Completion, Gutter, View as SourceView};
 use sourceview5::prelude::{BufferExt, ViewExt, GutterRendererExt, GutterRendererTextExt};
 use sourceview5::GutterRendererText;
 use std::cell::{Cell, RefCell};
@@ -15,6 +18,11 @@ pub struct TextEditor {
     source_view: SourceView,
     buffer: SourceBuffer,
     current_path: Rc<RefCell<Option<PathBuf>>>,
+    gutter: Gutter,
+    syllable_renderer: RefCell<Option<GutterRendererText>>,
+    completion: Completion,
+    word_provider: RefCell<Option<WordCompletionProvider>>,
+    rhyme_highlight: RefCell<Option<RhymeHighlight>>,
 }
 
 impl TextEditor {
@@ -83,47 +91,6 @@ impl TextEditor {
 
         source_view.set_css_classes(&["rhyme-editor-view"]);
 
-        if settings.word_completion {
-            let completion = ViewExt::completion(&source_view);
-            completion.add_provider(&crate::workspace::completion::WordCompletionProvider::new());
-        }
-
-        if settings.rhyme_highlighting {
-            crate::workspace::rhyme_highlight::attach(&buffer);
-        }
-
-        if settings.show_syllable_gutter {
-            // Create the syllable count renderer once
-            let syllable_renderer = GutterRendererText::new();
-            syllable_renderer.set_css_classes(&["syllable-count"]);
-            syllable_renderer.set_xalign(0.5);
-            syllable_renderer.set_yalign(0.5);
-
-            // Connect the query-data handler to update syllable counts
-            let buffer_clone = buffer.clone();
-            syllable_renderer.connect_query_data(move |renderer, _line_obj, line_num| {
-                if let Some(iter) = buffer_clone.iter_at_line(line_num as i32) {
-                    let end_iter = if let Some(next_iter) = buffer_clone.iter_at_line(line_num as i32 + 1) {
-                        next_iter
-                    } else {
-                        buffer_clone.end_iter()
-                    };
-
-                    let line = buffer_clone.text(&iter, &end_iter, false);
-                    if !line.trim().is_empty() {
-                        let syllables = crate::utils::text_stats::count_syllables(&line);
-                        renderer.set_text(&syllables.to_string());
-                    } else {
-                        renderer.set_text("");
-                    }
-                }
-            });
-
-            // Get the gutter and add the renderer right after line numbers
-            let gutter = ViewExt::gutter(&source_view, gtk::TextWindowType::Left);
-            gutter.insert(&syllable_renderer, -20); // Position right after line numbers (-30)
-        }
-
         // Disable bracket matching
         buffer.set_highlight_matching_brackets(false);
 
@@ -135,6 +102,8 @@ impl TextEditor {
         // Configure the gutter
         let gutter = ViewExt::gutter(&source_view, gtk::TextWindowType::Left);
         gutter.set_css_classes(&["rhyme-editor-gutter"]);
+
+        let completion = ViewExt::completion(&source_view);
 
         // Add custom CSS classes for the editor
         source_view.set_css_classes(&["rhyme-editor"]);
@@ -155,12 +124,73 @@ impl TextEditor {
             source_view,
             buffer,
             current_path,
+            gutter,
+            syllable_renderer: RefCell::new(None),
+            completion,
+            word_provider: RefCell::new(None),
+            rhyme_highlight: RefCell::new(None),
         };
 
         // Set initial empty state
         editor.set_text("");
+        editor.apply_settings(&settings);
 
         editor
+    }
+
+    /// Toggle the syllable gutter, completion provider, and rhyme
+    /// highlighting to match `settings` (adding/removing each live rather
+    /// than requiring the tab to be reopened), and update tab
+    /// width/auto-indent, which are plain `SourceView` properties.
+    pub fn apply_settings(&self, settings: &Settings) {
+        self.source_view.set_tab_width(settings.tab_width);
+        self.source_view.set_indent_width(settings.tab_width as i32);
+        self.source_view.set_auto_indent(settings.auto_indent);
+
+        let mut renderer_slot = self.syllable_renderer.borrow_mut();
+        match (renderer_slot.is_some(), settings.show_syllable_gutter) {
+            (false, true) => {
+                let renderer = create_syllable_renderer(&self.buffer);
+                self.gutter.insert(&renderer, -20); // Position right after line numbers (-30)
+                *renderer_slot = Some(renderer);
+            }
+            (true, false) => {
+                if let Some(renderer) = renderer_slot.take() {
+                    self.gutter.remove(&renderer);
+                }
+            }
+            _ => {}
+        }
+        drop(renderer_slot);
+
+        let mut provider_slot = self.word_provider.borrow_mut();
+        match (provider_slot.is_some(), settings.word_completion) {
+            (false, true) => {
+                let provider = WordCompletionProvider::new();
+                self.completion.add_provider(&provider);
+                *provider_slot = Some(provider);
+            }
+            (true, false) => {
+                if let Some(provider) = provider_slot.take() {
+                    self.completion.remove_provider(&provider);
+                }
+            }
+            _ => {}
+        }
+        drop(provider_slot);
+
+        let mut rhyme_slot = self.rhyme_highlight.borrow_mut();
+        match (rhyme_slot.is_some(), settings.rhyme_highlighting) {
+            (false, true) => {
+                *rhyme_slot = Some(crate::workspace::rhyme_highlight::attach(&self.buffer));
+            }
+            (true, false) => {
+                if let Some(handle) = rhyme_slot.take() {
+                    handle.detach();
+                }
+            }
+            _ => {}
+        }
     }
 
     pub fn set_text(&self, text: &str) {
@@ -204,6 +234,37 @@ impl Clone for TextEditor {
         }
         editor
     }
+}
+
+/// Builds a gutter renderer that shows each line's syllable count, live —
+/// separate from `TextEditor::new()` so `apply_settings` can add this back
+/// after the setting was toggled off and back on again.
+fn create_syllable_renderer(buffer: &SourceBuffer) -> GutterRendererText {
+    let syllable_renderer = GutterRendererText::new();
+    syllable_renderer.set_css_classes(&["syllable-count"]);
+    syllable_renderer.set_xalign(0.5);
+    syllable_renderer.set_yalign(0.5);
+
+    let buffer_clone = buffer.clone();
+    syllable_renderer.connect_query_data(move |renderer, _line_obj, line_num| {
+        if let Some(iter) = buffer_clone.iter_at_line(line_num as i32) {
+            let end_iter = if let Some(next_iter) = buffer_clone.iter_at_line(line_num as i32 + 1) {
+                next_iter
+            } else {
+                buffer_clone.end_iter()
+            };
+
+            let line = buffer_clone.text(&iter, &end_iter, false);
+            if !line.trim().is_empty() {
+                let syllables = crate::utils::text_stats::count_syllables(&line);
+                renderer.set_text(&syllables.to_string());
+            } else {
+                renderer.set_text("");
+            }
+        }
+    });
+
+    syllable_renderer
 }
 
 /// Walk up from a file's directory looking for the workspace's `.git` —

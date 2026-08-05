@@ -44,6 +44,13 @@ impl WorkspaceController {
         }
     }
 
+    /// Live-apply `settings` to every open tab, if a workspace is loaded.
+    pub fn apply_settings(&self, settings: &crate::utils::settings::Settings) {
+        if let Some(workspace) = self.get_workspace() {
+            workspace.apply_settings_to_open_tabs(settings);
+        }
+    }
+
     pub fn set_workspace(&self, workspace: Rc<Workspace>) {
         // Store the controller for use in tab operations
         self.workspace.replace(Some(workspace));

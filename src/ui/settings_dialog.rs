@@ -1,4 +1,5 @@
 use crate::utils::settings::Settings;
+use crate::workspace::workspace_controller::WorkspaceController;
 use gtk::prelude::*;
 use gtk::{
     Align, Application, Box as GtkBox, Button, CheckButton, Label, ListBox, ListBoxRow, Orientation, SearchEntry,
@@ -33,7 +34,10 @@ fn page(toggle: &CheckButton, description: Option<&str>) -> GtkBox {
     page
 }
 
-pub fn show_settings_dialog(app: &Application) {
+/// `controller` is `None` when opened from the welcome screen (no
+/// workspace loaded yet, so there's nothing to live-apply to) and `Some`
+/// when opened from an already-open workspace's File menu.
+pub fn show_settings_dialog(app: &Application, controller: Option<Rc<WorkspaceController>>) {
     let Some(parent) = app.active_window() else {
         return;
     };
@@ -151,26 +155,19 @@ pub fn show_settings_dialog(app: &Application) {
     main_split.append(&content);
 
     // ==========================================
-    // Bottom bar: a note on when changes apply, plus Cancel / Apply / OK
+    // Bottom bar: Cancel / Apply / OK, right-aligned
     // ==========================================
     let footer = GtkBox::new(Orientation::Horizontal, 10);
+    footer.set_halign(Align::End);
     footer.set_margin_top(12);
     footer.set_margin_bottom(12);
     footer.set_margin_start(16);
     footer.set_margin_end(16);
 
-    let note = Label::builder()
-        .label("Changes apply to tabs opened after saving.")
-        .halign(Align::Start)
-        .hexpand(true)
-        .css_classes(vec!["dim-label", "caption"])
-        .build();
-
     let cancel_btn = Button::builder().label("Cancel").build();
     let apply_btn = Button::builder().label("Apply").build();
     let ok_btn = Button::builder().label("OK").css_classes(vec!["suggested-action"]).build();
 
-    footer.append(&note);
     footer.append(&cancel_btn);
     footer.append(&apply_btn);
     footer.append(&ok_btn);
@@ -259,6 +256,9 @@ pub fn show_settings_dialog(app: &Application) {
         move || {
             let current = read_current();
             current.save();
+            if let Some(controller) = &controller {
+                controller.apply_settings(&current);
+            }
             baseline.set(current);
             update_apply_sensitivity();
         }

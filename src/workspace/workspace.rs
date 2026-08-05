@@ -426,6 +426,15 @@ impl Workspace {
             self.notebook.set_current_page(Some(index as u32));
         }
     }
+
+    /// Live-apply `settings` to every currently open tab — called after the
+    /// settings dialog saves, so a toggle takes effect immediately instead
+    /// of only for tabs opened afterward.
+    pub fn apply_settings_to_open_tabs(&self, settings: &crate::utils::settings::Settings) {
+        for editor in self.text_editors.borrow().iter() {
+            editor.apply_settings(settings);
+        }
+    }
 }
 
 fn add_new_tab(notebook: &Notebook, path: &Path, content: &str, controller: Option<Rc<WorkspaceController>>) -> (u32, TextEditor) {

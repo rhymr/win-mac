@@ -370,20 +370,43 @@ fn recompute(buffer: &SourceBuffer, tags: &[TextTag]) {
     }
 }
 
+/// A live `attach()` — dropping/`detach()`-ing this stops recoloring the
+/// buffer and clears whatever rhyme-group colors are currently applied, so
+/// toggling the setting off doesn't leave stale highlights behind.
+pub struct RhymeHighlight {
+    buffer: SourceBuffer,
+    tags: Vec<TextTag>,
+    handler_id: Option<glib::SignalHandlerId>,
+}
+
+impl RhymeHighlight {
+    pub fn detach(mut self) {
+        if let Some(id) = self.handler_id.take() {
+            self.buffer.disconnect(id);
+        }
+        let start = self.buffer.start_iter();
+        let end = self.buffer.end_iter();
+        for tag in &self.tags {
+            self.buffer.remove_tag(tag, &start, &end);
+        }
+    }
+}
+
 /// Recolors words in `buffer` by rhyme group, recomputing (debounced) on
 /// every edit.
-pub fn attach(buffer: &SourceBuffer) {
+pub fn attach(buffer: &SourceBuffer) -> RhymeHighlight {
     let tags = create_tags(buffer);
     recompute(buffer, &tags);
 
     let generation = Rc::new(Cell::new(0u64));
-    buffer.connect_changed(move |buf| {
+    let tags_for_signal = tags.clone();
+    let handler_id = buffer.connect_changed(move |buf| {
         let this_generation = generation.get() + 1;
         generation.set(this_generation);
 
         let generation_for_timeout = generation.clone();
         let buf_owned = buf.clone();
-        let tags_for_timeout = tags.clone();
+        let tags_for_timeout = tags_for_signal.clone();
         glib::timeout_add_local_once(RHYME_DEBOUNCE, move || {
             if generation_for_timeout.get() != this_generation {
                 return;
@@ -391,6 +414,8 @@ pub fn attach(buffer: &SourceBuffer) {
             recompute(&buf_owned, &tags_for_timeout);
         });
     });
+
+    RhymeHighlight { buffer: buffer.clone(), tags, handler_id: Some(handler_id) }
 }
 
 #[cfg(test)]

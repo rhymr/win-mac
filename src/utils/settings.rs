@@ -18,7 +18,7 @@ impl Default for Settings {
     fn default() -> Self {
         Self {
             show_syllable_gutter: true,
-            rhyme_highlighting: true,
+            rhyme_highlighting: false,
             // Off by default: dictionary-only completion misses most
             // songwriting vocabulary (slang, informal spellings), so it's
             // opt-in rather than on by default.

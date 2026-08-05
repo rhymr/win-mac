@@ -93,7 +93,7 @@ where
         .build();
     let app_for_settings = app.clone();
     settings_btn.connect_clicked(move |_| {
-        crate::ui::settings_dialog::show_settings_dialog(&app_for_settings);
+        crate::ui::settings_dialog::show_settings_dialog(&app_for_settings, None);
     });
 
     sidebar.append(&brand_box);
