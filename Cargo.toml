@@ -13,8 +13,9 @@ gio = { version = "0.22.8" }
 # SCSS -> CSS
 grass = { version = "0.13.4" }
 
-# Git integration (pure Rust bindings)
-git2 = "0.21.0"
+# Git integration (pure Rust bindings) — ssh/https needed for actual network
+# transport (push/pull/fetch), and pull in the credential-helper API.
+git2 = { version = "0.21.0", features = ["ssh", "https"] }
 dirs = "6.0.0"
 
 # Futures & Async

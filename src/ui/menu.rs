@@ -25,16 +25,77 @@ fn accel(extra_mods: &str, key: &str) -> String {
 pub fn setup_menu(app: &Application, workspace_controller: Rc<WorkspaceController>) {
     let file = file(app, workspace_controller.clone());
     // edit(app, workspace_controller);
-    // other(app, workspace_controller);
+    let git = git(app, workspace_controller.clone());
     let help = help(app);
 
     // Create the menu bar and add menus
     let menu_bar = Menu::new();
     menu_bar.append_submenu(Some("File"), &file);
+    menu_bar.append_submenu(Some("Git"), &git);
     menu_bar.append_submenu(Some("Help"), &help);
 
     // Set menu bar in app
     app.set_menubar(Some(&menu_bar));
+}
+
+fn git(app: &Application, workspace_controller: Rc<WorkspaceController>) -> Menu {
+    let git_menu = gio::Menu::new();
+
+    let commit_section = gio::Menu::new();
+    commit_section.append(Some("Commit…"), Some("app.git-commit"));
+    git_menu.insert_section(0, None, &commit_section);
+
+    let sync_section = gio::Menu::new();
+    sync_section.append(Some("Push…"), Some("app.git-push"));
+    sync_section.append(Some("Pull…"), Some("app.git-pull"));
+    sync_section.append(Some("Fetch"), Some("app.git-fetch"));
+    git_menu.insert_section(1, None, &sync_section);
+
+    let controller = workspace_controller.clone();
+    let app_weak = app.downgrade();
+    let commit_action = gio::SimpleAction::new("git-commit", None);
+    commit_action.connect_activate(move |_, _| {
+        if let Some(app) = app_weak.upgrade() {
+            crate::ui::git_dialogs::show_commit_dialog(&app, controller.clone());
+        }
+    });
+    app.add_action(&commit_action);
+
+    let controller = workspace_controller.clone();
+    let app_weak = app.downgrade();
+    let push_action = gio::SimpleAction::new("git-push", None);
+    push_action.connect_activate(move |_, _| {
+        if let Some(app) = app_weak.upgrade() {
+            crate::ui::git_dialogs::show_push_dialog(&app, controller.clone());
+        }
+    });
+    app.add_action(&push_action);
+
+    let controller = workspace_controller.clone();
+    let app_weak = app.downgrade();
+    let pull_action = gio::SimpleAction::new("git-pull", None);
+    pull_action.connect_activate(move |_, _| {
+        if let Some(app) = app_weak.upgrade() {
+            crate::ui::git_dialogs::show_pull_dialog(&app, controller.clone());
+        }
+    });
+    app.add_action(&pull_action);
+
+    let controller = workspace_controller.clone();
+    let app_weak = app.downgrade();
+    let fetch_action = gio::SimpleAction::new("git-fetch", None);
+    fetch_action.connect_activate(move |_, _| {
+        if let Some(app) = app_weak.upgrade() {
+            crate::ui::git_dialogs::show_fetch_dialog(&app, controller.clone());
+        }
+    });
+    app.add_action(&fetch_action);
+
+    app.set_accels_for_action("app.git-commit", &[&accel("", "k")]);
+    app.set_accels_for_action("app.git-push", &[&accel("<Shift>", "k")]);
+    app.set_accels_for_action("app.git-pull", &[&accel("", "t")]);
+
+    git_menu
 }
 
 fn help(app: &Application) -> Menu {

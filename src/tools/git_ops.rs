@@ -105,6 +105,118 @@ impl GitController {
 
         result
     }
+
+    /// The checked-out branch's short name (e.g. `"main"`), or `None` on a
+    /// detached HEAD or an unborn/empty repo.
+    pub fn current_branch_name(&self) -> Option<String> {
+        let repo = Repository::open(&self.repo_path).ok()?;
+        let head = repo.head().ok()?;
+        head.shorthand().ok().map(str::to_string)
+    }
+
+    /// Whether a remote named `name` (e.g. `"origin"`) is configured.
+    pub fn has_remote(&self, name: &str) -> bool {
+        let Ok(repo) = Repository::open(&self.repo_path) else {
+            return false;
+        };
+        repo.find_remote(name).is_ok()
+    }
+
+    /// Fetch `remote_name`, returning a one-line human-readable summary.
+    pub fn fetch(&self, remote_name: &str) -> Result<String, String> {
+        let repo = Repository::open(&self.repo_path).map_err(|e| e.to_string())?;
+        let mut remote = repo.find_remote(remote_name).map_err(|e| e.to_string())?;
+        let mut fetch_opts = git2::FetchOptions::new();
+        fetch_opts.remote_callbacks(remote_callbacks());
+        remote.fetch::<&str>(&[], Some(&mut fetch_opts), None).map_err(|e| e.to_string())?;
+
+        let stats = remote.stats();
+        if stats.received_objects() == 0 {
+            Ok("Already up to date.".to_string())
+        } else {
+            Ok(format!("Fetched {} object(s) from {remote_name}.", stats.received_objects()))
+        }
+    }
+
+    /// Fetch `remote_name` and fast-forward the current branch to match —
+    /// deliberately doesn't attempt a merge or rebase when the branches have
+    /// diverged, since resolving that safely needs a real merge-conflict UI
+    /// this app doesn't have; it reports back instead so the user can
+    /// resolve it another way (e.g. the terminal).
+    pub fn pull(&self, remote_name: &str) -> Result<String, String> {
+        let repo = Repository::open(&self.repo_path).map_err(|e| e.to_string())?;
+        let branch_name = self.current_branch_name().ok_or("Detached HEAD — can't pull".to_string())?;
+
+        let mut remote = repo.find_remote(remote_name).map_err(|e| e.to_string())?;
+        let mut fetch_opts = git2::FetchOptions::new();
+        fetch_opts.remote_callbacks(remote_callbacks());
+        remote.fetch(&[branch_name.as_str()], Some(&mut fetch_opts), None).map_err(|e| e.to_string())?;
+
+        let fetch_head = repo.find_reference("FETCH_HEAD").map_err(|e| e.to_string())?;
+        let fetch_commit = repo.reference_to_annotated_commit(&fetch_head).map_err(|e| e.to_string())?;
+
+        let (analysis, _) = repo.merge_analysis(&[&fetch_commit]).map_err(|e| e.to_string())?;
+        if analysis.is_up_to_date() {
+            return Ok("Already up to date.".to_string());
+        }
+        if !analysis.is_fast_forward() {
+            return Err(format!(
+                "'{branch_name}' has diverged from {remote_name}/{branch_name} — can't fast-forward. Resolve manually."
+            ));
+        }
+
+        let refname = format!("refs/heads/{branch_name}");
+        let mut reference = repo.find_reference(&refname).map_err(|e| e.to_string())?;
+        reference.set_target(fetch_commit.id(), "Fast-forward pull").map_err(|e| e.to_string())?;
+        repo.set_head(&refname).map_err(|e| e.to_string())?;
+        repo.checkout_head(Some(git2::build::CheckoutBuilder::default().force())).map_err(|e| e.to_string())?;
+
+        Ok(format!("Fast-forwarded '{branch_name}' to {remote_name}/{branch_name}."))
+    }
+
+    /// Push the current branch to `remote_name`, creating/updating the same
+    /// branch name there.
+    pub fn push(&self, remote_name: &str) -> Result<String, String> {
+        let repo = Repository::open(&self.repo_path).map_err(|e| e.to_string())?;
+        let branch_name = self.current_branch_name().ok_or("Detached HEAD — can't push".to_string())?;
+
+        let mut remote = repo.find_remote(remote_name).map_err(|e| e.to_string())?;
+        let mut push_opts = git2::PushOptions::new();
+        push_opts.remote_callbacks(remote_callbacks());
+
+        let refspec = format!("refs/heads/{branch_name}:refs/heads/{branch_name}");
+        remote.push(&[refspec.as_str()], Some(&mut push_opts)).map_err(|e| e.to_string())?;
+
+        Ok(format!("Pushed '{branch_name}' to {remote_name}."))
+    }
+}
+
+/// Credential resolution shared by fetch/pull/push: SSH-agent for `git@`/
+/// `ssh://` remotes, falling back to the OS credential helper (e.g.
+/// git-credential-osxkeychain) for HTTPS — the same two sources plain `git`
+/// itself tries first, so this "just works" for anyone who can already
+/// `git push` from the terminal without being prompted.
+fn remote_callbacks<'a>() -> git2::RemoteCallbacks<'a> {
+    let mut callbacks = git2::RemoteCallbacks::new();
+    callbacks.credentials(|url, username_from_url, allowed_types| {
+        if allowed_types.contains(git2::CredentialType::SSH_KEY) {
+            if let Some(username) = username_from_url {
+                if let Ok(cred) = git2::Cred::ssh_key_from_agent(username) {
+                    return Ok(cred);
+                }
+            }
+        }
+        if allowed_types.contains(git2::CredentialType::USER_PASS_PLAINTEXT) {
+            let config = git2::Config::open_default().or_else(|_| git2::Config::new());
+            if let Ok(config) = config {
+                if let Ok(cred) = git2::Cred::credential_helper(&config, url, username_from_url) {
+                    return Ok(cred);
+                }
+            }
+        }
+        git2::Cred::default()
+    });
+    callbacks
 }
 
 /// Stage every change in the workspace (new, modified, and deleted files
