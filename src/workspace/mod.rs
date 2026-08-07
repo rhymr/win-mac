@@ -1,7 +1,6 @@
 pub mod completion;
 pub mod file_tree;
 pub mod file_tree_menu;
-pub mod rhyme_highlight;
 pub mod text_editor;
 pub mod workspace;
 pub mod workspace_controller;

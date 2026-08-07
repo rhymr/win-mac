@@ -8,6 +8,12 @@ use std::path::PathBuf;
 pub struct Settings {
     pub show_syllable_gutter: bool,
     pub rhyme_highlighting: bool,
+    /// Whether the rhyme highlighter treats a blank line as a stanza
+    /// boundary it won't compare across, even if the other line is within
+    /// its line-lookback window. On by default since rhyme schemes rarely
+    /// intentionally reach across a stanza break; off lets the highlighter
+    /// also catch schemes that do.
+    pub rhyme_stop_at_blank_line: bool,
     pub word_completion: bool,
     pub auto_indent: bool,
     pub tab_width: u32,
@@ -19,6 +25,7 @@ impl Default for Settings {
         Self {
             show_syllable_gutter: true,
             rhyme_highlighting: false,
+            rhyme_stop_at_blank_line: true,
             // Off by default: dictionary-only completion misses most
             // songwriting vocabulary (slang, informal spellings), so it's
             // opt-in rather than on by default.
@@ -55,6 +62,7 @@ impl Settings {
             match key {
                 "show_syllable_gutter" => settings.show_syllable_gutter = value == "true",
                 "rhyme_highlighting" => settings.rhyme_highlighting = value == "true",
+                "rhyme_stop_at_blank_line" => settings.rhyme_stop_at_blank_line = value == "true",
                 "word_completion" => settings.word_completion = value == "true",
                 "auto_indent" => settings.auto_indent = value == "true",
                 "tab_width" => settings.tab_width = value.parse().unwrap_or(settings.tab_width),
@@ -71,9 +79,10 @@ impl Settings {
             return;
         };
         let contents = format!(
-            "show_syllable_gutter={}\nrhyme_highlighting={}\nword_completion={}\nauto_indent={}\ntab_width={}\ngit_autostage={}\n",
+            "show_syllable_gutter={}\nrhyme_highlighting={}\nrhyme_stop_at_blank_line={}\nword_completion={}\nauto_indent={}\ntab_width={}\ngit_autostage={}\n",
             self.show_syllable_gutter,
             self.rhyme_highlighting,
+            self.rhyme_stop_at_blank_line,
             self.word_completion,
             self.auto_indent,
             self.tab_width,

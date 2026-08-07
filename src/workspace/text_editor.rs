@@ -1,6 +1,6 @@
 use crate::utils::settings::Settings;
 use crate::workspace::completion::WordCompletionProvider;
-use crate::workspace::rhyme_highlight::RhymeHighlight;
+use crate::rhyme::RhymeHighlight;
 use gtk::prelude::*;
 use gtk::{Frame, ScrolledWindow};
 use sourceview5::{Buffer as SourceBuffer, Completion, Gutter, View as SourceView};
@@ -182,7 +182,7 @@ impl TextEditor {
         let mut rhyme_slot = self.rhyme_highlight.borrow_mut();
         match (rhyme_slot.is_some(), settings.rhyme_highlighting) {
             (false, true) => {
-                *rhyme_slot = Some(crate::workspace::rhyme_highlight::attach(&self.buffer));
+                *rhyme_slot = Some(crate::rhyme::attach(&self.buffer));
             }
             (true, false) => {
                 if let Some(handle) = rhyme_slot.take() {

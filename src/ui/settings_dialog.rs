@@ -125,13 +125,16 @@ pub fn show_settings_dialog(app: &Application, controller: Option<Rc<WorkspaceCo
     stack.add_named(&editor_page, Some("editor"));
 
     let rhyme_toggle = CheckButton::builder().label("Highlight rhyming syllables").active(settings.rhyme_highlighting).build();
-    stack.add_named(
-        &page(
-            &rhyme_toggle,
-            Some("Colors the background of syllables that rhyme with another word elsewhere in the document."),
-        ),
-        Some("rhyme"),
+    let rhyme_stop_at_blank_line_toggle = CheckButton::builder()
+        .label("Don't match rhymes across a blank line")
+        .active(settings.rhyme_stop_at_blank_line)
+        .build();
+    let rhyme_page = page(
+        &rhyme_toggle,
+        Some("Colors the background of syllables that rhyme with another word elsewhere in the document."),
     );
+    rhyme_page.append(&rhyme_stop_at_blank_line_toggle);
+    stack.add_named(&rhyme_page, Some("rhyme"));
 
     let completion_toggle =
         CheckButton::builder().label("Enable dictionary word completion").active(settings.word_completion).build();
@@ -215,11 +218,13 @@ pub fn show_settings_dialog(app: &Application, controller: Option<Rc<WorkspaceCo
         let auto_indent_toggle = auto_indent_toggle.clone();
         let tab_width_spin = tab_width_spin.clone();
         let rhyme_toggle = rhyme_toggle.clone();
+        let rhyme_stop_at_blank_line_toggle = rhyme_stop_at_blank_line_toggle.clone();
         let completion_toggle = completion_toggle.clone();
         let git_toggle = git_toggle.clone();
         move || Settings {
             show_syllable_gutter: gutter_toggle.is_active(),
             rhyme_highlighting: rhyme_toggle.is_active(),
+            rhyme_stop_at_blank_line: rhyme_stop_at_blank_line_toggle.is_active(),
             word_completion: completion_toggle.is_active(),
             auto_indent: auto_indent_toggle.is_active(),
             tab_width: tab_width_spin.value() as u32,
@@ -242,7 +247,9 @@ pub fn show_settings_dialog(app: &Application, controller: Option<Rc<WorkspaceCo
         }
     });
 
-    for toggle in [&gutter_toggle, &auto_indent_toggle, &rhyme_toggle, &completion_toggle, &git_toggle] {
+    for toggle in
+        [&gutter_toggle, &auto_indent_toggle, &rhyme_toggle, &rhyme_stop_at_blank_line_toggle, &completion_toggle, &git_toggle]
+    {
         let f = update_apply_sensitivity.clone();
         toggle.connect_toggled(move |_| f());
     }
