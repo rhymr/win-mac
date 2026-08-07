@@ -19,7 +19,9 @@ pub struct GitController {
 
 impl GitController {
     pub fn new(repo_path: &Path) -> Self {
-        Self { repo_path: repo_path.to_path_buf() }
+        Self {
+            repo_path: repo_path.to_path_buf(),
+        }
     }
 
     /// Commit all modified/new .txt files with a specific message
@@ -28,16 +30,17 @@ impl GitController {
         let mut index = repo.index().map_err(|e| e.to_string())?;
 
         // Add all plain text files to stage
-        index.add_all(["*.txt"].iter(), git2::IndexAddOption::DEFAULT, None)
+        index
+            .add_all(["*.txt"].iter(), git2::IndexAddOption::DEFAULT, None)
             .map_err(|e| e.to_string())?;
         index.write().map_err(|e| e.to_string())?;
 
         let tree_id = index.write_tree().map_err(|e| e.to_string())?;
         let tree = repo.find_tree(tree_id).map_err(|e| e.to_string())?;
 
-        let signature = repo.signature().unwrap_or_else(|_| {
-            git2::Signature::now("Pneuma", "pneuma@local").unwrap()
-        });
+        let signature = repo
+            .signature()
+            .unwrap_or_else(|_| git2::Signature::now("Pneuma", "pneuma@local").unwrap());
 
         let parent_commit = match repo.head() {
             Ok(head) => Some(head.peel_to_commit().map_err(|e| e.to_string())?),
@@ -56,7 +59,8 @@ impl GitController {
             message,
             &tree,
             &parents,
-        ).map_err(|e| e.to_string())
+        )
+        .map_err(|e| e.to_string())
     }
 
     /// Absolute paths of tracked/untracked files that differ from HEAD —
@@ -128,13 +132,18 @@ impl GitController {
         let mut remote = repo.find_remote(remote_name).map_err(|e| e.to_string())?;
         let mut fetch_opts = git2::FetchOptions::new();
         fetch_opts.remote_callbacks(remote_callbacks());
-        remote.fetch::<&str>(&[], Some(&mut fetch_opts), None).map_err(|e| e.to_string())?;
+        remote
+            .fetch::<&str>(&[], Some(&mut fetch_opts), None)
+            .map_err(|e| e.to_string())?;
 
         let stats = remote.stats();
         if stats.received_objects() == 0 {
             Ok("Already up to date.".to_string())
         } else {
-            Ok(format!("Fetched {} object(s) from {remote_name}.", stats.received_objects()))
+            Ok(format!(
+                "Fetched {} object(s) from {remote_name}.",
+                stats.received_objects()
+            ))
         }
     }
 
@@ -145,17 +154,27 @@ impl GitController {
     /// resolve it another way (e.g. the terminal).
     pub fn pull(&self, remote_name: &str) -> Result<String, String> {
         let repo = Repository::open(&self.repo_path).map_err(|e| e.to_string())?;
-        let branch_name = self.current_branch_name().ok_or("Detached HEAD — can't pull".to_string())?;
+        let branch_name = self
+            .current_branch_name()
+            .ok_or("Detached HEAD — can't pull".to_string())?;
 
         let mut remote = repo.find_remote(remote_name).map_err(|e| e.to_string())?;
         let mut fetch_opts = git2::FetchOptions::new();
         fetch_opts.remote_callbacks(remote_callbacks());
-        remote.fetch(&[branch_name.as_str()], Some(&mut fetch_opts), None).map_err(|e| e.to_string())?;
+        remote
+            .fetch(&[branch_name.as_str()], Some(&mut fetch_opts), None)
+            .map_err(|e| e.to_string())?;
 
-        let fetch_head = repo.find_reference("FETCH_HEAD").map_err(|e| e.to_string())?;
-        let fetch_commit = repo.reference_to_annotated_commit(&fetch_head).map_err(|e| e.to_string())?;
+        let fetch_head = repo
+            .find_reference("FETCH_HEAD")
+            .map_err(|e| e.to_string())?;
+        let fetch_commit = repo
+            .reference_to_annotated_commit(&fetch_head)
+            .map_err(|e| e.to_string())?;
 
-        let (analysis, _) = repo.merge_analysis(&[&fetch_commit]).map_err(|e| e.to_string())?;
+        let (analysis, _) = repo
+            .merge_analysis(&[&fetch_commit])
+            .map_err(|e| e.to_string())?;
         if analysis.is_up_to_date() {
             return Ok("Already up to date.".to_string());
         }
@@ -167,25 +186,34 @@ impl GitController {
 
         let refname = format!("refs/heads/{branch_name}");
         let mut reference = repo.find_reference(&refname).map_err(|e| e.to_string())?;
-        reference.set_target(fetch_commit.id(), "Fast-forward pull").map_err(|e| e.to_string())?;
+        reference
+            .set_target(fetch_commit.id(), "Fast-forward pull")
+            .map_err(|e| e.to_string())?;
         repo.set_head(&refname).map_err(|e| e.to_string())?;
-        repo.checkout_head(Some(git2::build::CheckoutBuilder::default().force())).map_err(|e| e.to_string())?;
+        repo.checkout_head(Some(git2::build::CheckoutBuilder::default().force()))
+            .map_err(|e| e.to_string())?;
 
-        Ok(format!("Fast-forwarded '{branch_name}' to {remote_name}/{branch_name}."))
+        Ok(format!(
+            "Fast-forwarded '{branch_name}' to {remote_name}/{branch_name}."
+        ))
     }
 
     /// Push the current branch to `remote_name`, creating/updating the same
     /// branch name there.
     pub fn push(&self, remote_name: &str) -> Result<String, String> {
         let repo = Repository::open(&self.repo_path).map_err(|e| e.to_string())?;
-        let branch_name = self.current_branch_name().ok_or("Detached HEAD — can't push".to_string())?;
+        let branch_name = self
+            .current_branch_name()
+            .ok_or("Detached HEAD — can't push".to_string())?;
 
         let mut remote = repo.find_remote(remote_name).map_err(|e| e.to_string())?;
         let mut push_opts = git2::PushOptions::new();
         push_opts.remote_callbacks(remote_callbacks());
 
         let refspec = format!("refs/heads/{branch_name}:refs/heads/{branch_name}");
-        remote.push(&[refspec.as_str()], Some(&mut push_opts)).map_err(|e| e.to_string())?;
+        remote
+            .push(&[refspec.as_str()], Some(&mut push_opts))
+            .map_err(|e| e.to_string())?;
 
         Ok(format!("Pushed '{branch_name}' to {remote_name}."))
     }

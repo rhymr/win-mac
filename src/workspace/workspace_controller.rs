@@ -1,11 +1,11 @@
 use crate::utils::file_ops::FileOps;
-use gtk::prelude::*;
+use crate::workspace::workspace::Workspace;
 use gtk::Window;
+use gtk::prelude::*;
 use std::cell::RefCell;
 use std::fs;
 use std::path::PathBuf;
 use std::rc::Rc;
-use crate::workspace::workspace::Workspace;
 
 pub struct WorkspaceController {
     pub(crate) workspace: RefCell<Option<Rc<Workspace>>>,
@@ -169,9 +169,16 @@ impl WorkspaceController {
 
         let content = buffer.text(&buffer.start_iter(), &buffer.end_iter(), false);
         let saved_path = if let Some(existing_path) = path {
-            let ok = FileOps::save_file(content.to_string(), Some(existing_path.clone()), Some(window.clone())).is_some();
+            let ok = FileOps::save_file(
+                content.to_string(),
+                Some(existing_path.clone()),
+                Some(window.clone()),
+            )
+            .is_some();
             ok.then_some(existing_path)
-        } else if let Some(new_path) = FileOps::save_file(content.to_string(), None, Some(window.clone())) {
+        } else if let Some(new_path) =
+            FileOps::save_file(content.to_string(), None, Some(window.clone()))
+        {
             workspace.update_current_tab_path(new_path.clone());
             Some(new_path)
         } else {
@@ -225,4 +232,4 @@ impl WorkspaceController {
             }
         }
     }
-} 
+}

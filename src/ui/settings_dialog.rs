@@ -2,13 +2,17 @@ use crate::utils::settings::Settings;
 use crate::workspace::workspace_controller::WorkspaceController;
 use gtk::prelude::*;
 use gtk::{
-    Align, Application, Box as GtkBox, Button, CheckButton, Label, ListBox, ListBoxRow, Orientation, SearchEntry,
-    Separator, SpinButton, Stack, Window,
+    Align, Application, Box as GtkBox, Button, CheckButton, Label, ListBox, ListBoxRow,
+    Orientation, SearchEntry, Separator, SpinButton, Stack, Window,
 };
 use std::rc::Rc;
 
-const CATEGORIES: [(&str, &str); 4] =
-    [("editor", "Editor"), ("rhyme", "Rhyme Highlighting"), ("completion", "Completions"), ("git", "Git")];
+const CATEGORIES: [(&str, &str); 4] = [
+    ("editor", "Editor"),
+    ("rhyme", "Rhyme Highlighting"),
+    ("completion", "Completions"),
+    ("git", "Git"),
+];
 
 /// A category page: a checkbox toggle plus an optional description label
 /// underneath it, both left-aligned with the same margins.
@@ -58,7 +62,10 @@ pub fn show_settings_dialog(app: &Application, controller: Option<Rc<WorkspaceCo
     // ==========================================
     // Sidebar: search + category list
     // ==========================================
-    let sidebar = GtkBox::builder().orientation(Orientation::Vertical).css_classes(vec!["settings-sidebar"]).build();
+    let sidebar = GtkBox::builder()
+        .orientation(Orientation::Vertical)
+        .css_classes(vec!["settings-sidebar"])
+        .build();
     sidebar.set_width_request(220);
 
     let search_entry = SearchEntry::builder()
@@ -69,8 +76,10 @@ pub fn show_settings_dialog(app: &Application, controller: Option<Rc<WorkspaceCo
         .margin_end(12)
         .build();
 
-    let category_list =
-        ListBox::builder().selection_mode(gtk::SelectionMode::Single).css_classes(vec!["settings-category-list"]).build();
+    let category_list = ListBox::builder()
+        .selection_mode(gtk::SelectionMode::Single)
+        .css_classes(vec!["settings-category-list"])
+        .build();
 
     for (_, label) in CATEGORIES {
         let row = ListBoxRow::new();
@@ -92,7 +101,11 @@ pub fn show_settings_dialog(app: &Application, controller: Option<Rc<WorkspaceCo
     // ==========================================
     // Content: header + the selected category's page
     // ==========================================
-    let content = GtkBox::builder().orientation(Orientation::Vertical).hexpand(true).css_classes(vec!["settings-content"]).build();
+    let content = GtkBox::builder()
+        .orientation(Orientation::Vertical)
+        .hexpand(true)
+        .css_classes(vec!["settings-content"])
+        .build();
 
     let header_label = Label::builder()
         .halign(Align::Start)
@@ -111,12 +124,19 @@ pub fn show_settings_dialog(app: &Application, controller: Option<Rc<WorkspaceCo
         .label("Show syllable count in the gutter")
         .active(settings.show_syllable_gutter)
         .build();
-    let auto_indent_toggle =
-        CheckButton::builder().label("Auto-indent new lines").active(settings.auto_indent).build();
+    let auto_indent_toggle = CheckButton::builder()
+        .label("Auto-indent new lines")
+        .active(settings.auto_indent)
+        .build();
     let tab_width_row = GtkBox::new(Orientation::Horizontal, 10);
     let tab_width_spin = SpinButton::with_range(1.0, 8.0, 1.0);
     tab_width_spin.set_value(settings.tab_width as f64);
-    tab_width_row.append(&Label::builder().label("Tab width:").halign(Align::Start).build());
+    tab_width_row.append(
+        &Label::builder()
+            .label("Tab width:")
+            .halign(Align::Start)
+            .build(),
+    );
     tab_width_row.append(&tab_width_spin);
 
     let editor_page = page(&gutter_toggle, None);
@@ -124,20 +144,27 @@ pub fn show_settings_dialog(app: &Application, controller: Option<Rc<WorkspaceCo
     editor_page.append(&tab_width_row);
     stack.add_named(&editor_page, Some("editor"));
 
-    let rhyme_toggle = CheckButton::builder().label("Highlight rhyming syllables").active(settings.rhyme_highlighting).build();
+    let rhyme_toggle = CheckButton::builder()
+        .label("Highlight rhyming syllables")
+        .active(settings.rhyme_highlighting)
+        .build();
     let rhyme_stop_at_blank_line_toggle = CheckButton::builder()
         .label("Don't match rhymes across a blank line")
         .active(settings.rhyme_stop_at_blank_line)
         .build();
     let rhyme_page = page(
         &rhyme_toggle,
-        Some("Colors the background of syllables that rhyme with another word elsewhere in the document."),
+        Some(
+            "Colors the background of syllables that rhyme with another word elsewhere in the document.",
+        ),
     );
     rhyme_page.append(&rhyme_stop_at_blank_line_toggle);
     stack.add_named(&rhyme_page, Some("rhyme"));
 
-    let completion_toggle =
-        CheckButton::builder().label("Enable dictionary word completion").active(settings.word_completion).build();
+    let completion_toggle = CheckButton::builder()
+        .label("Enable dictionary word completion")
+        .active(settings.word_completion)
+        .build();
     stack.add_named(
         &page(
             &completion_toggle,
@@ -146,8 +173,10 @@ pub fn show_settings_dialog(app: &Application, controller: Option<Rc<WorkspaceCo
         Some("completion"),
     );
 
-    let git_toggle =
-        CheckButton::builder().label("Automatically stage changes when saving").active(settings.git_autostage).build();
+    let git_toggle = CheckButton::builder()
+        .label("Automatically stage changes when saving")
+        .active(settings.git_autostage)
+        .build();
     stack.add_named(&page(&git_toggle, None), Some("git"));
 
     content.append(&stack);
@@ -169,7 +198,10 @@ pub fn show_settings_dialog(app: &Application, controller: Option<Rc<WorkspaceCo
 
     let cancel_btn = Button::builder().label("Cancel").build();
     let apply_btn = Button::builder().label("Apply").build();
-    let ok_btn = Button::builder().label("OK").css_classes(vec!["suggested-action"]).build();
+    let ok_btn = Button::builder()
+        .label("OK")
+        .css_classes(vec!["suggested-action"])
+        .build();
 
     footer.append(&cancel_btn);
     footer.append(&apply_btn);
@@ -247,9 +279,14 @@ pub fn show_settings_dialog(app: &Application, controller: Option<Rc<WorkspaceCo
         }
     });
 
-    for toggle in
-        [&gutter_toggle, &auto_indent_toggle, &rhyme_toggle, &rhyme_stop_at_blank_line_toggle, &completion_toggle, &git_toggle]
-    {
+    for toggle in [
+        &gutter_toggle,
+        &auto_indent_toggle,
+        &rhyme_toggle,
+        &rhyme_stop_at_blank_line_toggle,
+        &completion_toggle,
+        &git_toggle,
+    ] {
         let f = update_apply_sensitivity.clone();
         toggle.connect_toggled(move |_| f());
     }

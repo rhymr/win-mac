@@ -132,13 +132,20 @@ impl FileTree {
 
         // Keep the tree selection in sync with the active editor tab
         let file_tree_for_sync = self.clone();
-        workspace.notebook.connect_switch_page(move |_, _, page_num| {
-            if let Some(workspace) = file_tree_for_sync.workspace.borrow().as_ref() {
-                if let Some(path) = workspace.open_files.borrow().get(page_num as usize).cloned() {
-                    file_tree_for_sync.select_path(&path);
+        workspace
+            .notebook
+            .connect_switch_page(move |_, _, page_num| {
+                if let Some(workspace) = file_tree_for_sync.workspace.borrow().as_ref() {
+                    if let Some(path) = workspace
+                        .open_files
+                        .borrow()
+                        .get(page_num as usize)
+                        .cloned()
+                    {
+                        file_tree_for_sync.select_path(&path);
+                    }
                 }
-            }
-        });
+            });
     }
 
     /// Point the tree at a workspace folder and populate it from disk.
@@ -231,7 +238,13 @@ impl FileTree {
         &self.frame
     }
 
-    pub(crate) fn build_row(&self, path: &Path, is_dir: bool, depth: usize, is_root: bool) -> ListBoxRow {
+    pub(crate) fn build_row(
+        &self,
+        path: &Path,
+        is_dir: bool,
+        depth: usize,
+        is_root: bool,
+    ) -> ListBoxRow {
         let hbox = GtkBox::new(Orientation::Horizontal, 0);
         hbox.set_valign(Align::Center);
         hbox.set_css_classes(&["file-list-row"]);
@@ -367,7 +380,13 @@ impl FileTree {
         let hbox_ref = hbox.clone();
         let label_ref = name_label.clone();
         context_click.connect_pressed(move |_, _, _, _| {
-            file_tree_ref.show_context_menu(&hbox_ref, &label_ref, path_owned.clone(), is_dir, is_root);
+            file_tree_ref.show_context_menu(
+                &hbox_ref,
+                &label_ref,
+                path_owned.clone(),
+                is_dir,
+                is_root,
+            );
         });
         hbox.add_controller(context_click);
 
@@ -395,7 +414,8 @@ impl FileTree {
 
         // Directories (including the root) accept drops to move items into them
         if is_dir {
-            let drop_target = DropTarget::new(gtk::glib::types::Type::STRING, gdk::DragAction::MOVE);
+            let drop_target =
+                DropTarget::new(gtk::glib::types::Type::STRING, gdk::DragAction::MOVE);
 
             // Highlight the folder currently under the pointer during a drag,
             // so it's obvious where a drop will land.
@@ -468,7 +488,10 @@ fn collect_entries(
         match (a_is_dir, b_is_dir) {
             (true, false) => Ordering::Less,
             (false, true) => Ordering::Greater,
-            _ => a.file_name().to_ascii_lowercase().cmp(&b.file_name().to_ascii_lowercase()),
+            _ => a
+                .file_name()
+                .to_ascii_lowercase()
+                .cmp(&b.file_name().to_ascii_lowercase()),
         }
     });
 

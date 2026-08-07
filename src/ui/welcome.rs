@@ -1,3 +1,6 @@
+use crate::tools::apple_notes::fetch_apple_notes;
+use crate::utils::recent_workspaces::load_recent_workspaces;
+use crate::workspace::workspace_manager::WorkspaceManager;
 use gio::prelude::FileExt;
 use gtk::prelude::*;
 use gtk::{
@@ -6,9 +9,6 @@ use gtk::{
 };
 use std::path::PathBuf;
 use std::rc::Rc;
-use crate::tools::apple_notes::fetch_apple_notes;
-use crate::utils::recent_workspaces::load_recent_workspaces;
-use crate::workspace::workspace_manager::WorkspaceManager;
 
 /// Shows the workspace picker as the app's initial ApplicationWindow.
 /// The main editor layout isn't built until a workspace is actually chosen.
@@ -246,14 +246,18 @@ where
         let dlg_inner = window_for_open.clone();
         let cb_inner = callback_open.clone();
 
-        file_dialog.select_folder(Some(&window_for_open), gio::Cancellable::NONE, move |result| {
-            if let Ok(folder) = result {
-                if let Some(path) = folder.path() {
-                    dlg_inner.close();
-                    cb_inner(path);
+        file_dialog.select_folder(
+            Some(&window_for_open),
+            gio::Cancellable::NONE,
+            move |result| {
+                if let Ok(folder) = result {
+                    if let Some(path) = folder.path() {
+                        dlg_inner.close();
+                        cb_inner(path);
+                    }
                 }
-            }
-        });
+            },
+        );
     });
 
     // New Project Button Handler — opens the New Project dialog instead of
@@ -416,7 +420,10 @@ where
         .halign(Align::End)
         .css_classes(vec!["field-label"])
         .build();
-    let name_entry = Entry::builder().text("RhymrWorkspace").hexpand(true).build();
+    let name_entry = Entry::builder()
+        .text("RhymrWorkspace")
+        .hexpand(true)
+        .build();
     grid.attach(&name_label, 0, 0, 1, 1);
     grid.attach(&name_entry, 1, 0, 2, 1);
 
@@ -441,7 +448,10 @@ where
         .build();
     grid.attach(&preview_label, 1, 2, 2, 1);
 
-    let git_toggle = CheckButton::builder().label("Create Git repository").active(true).build();
+    let git_toggle = CheckButton::builder()
+        .label("Create Git repository")
+        .active(true)
+        .build();
     grid.attach(&git_toggle, 1, 3, 2, 1);
 
     let notes_toggle = CheckButton::builder()
@@ -475,7 +485,11 @@ where
         move || {
             let location = location_entry.text();
             let name = name_entry.text();
-            let name = if name.trim().is_empty() { "untitled" } else { name.trim() };
+            let name = if name.trim().is_empty() {
+                "untitled"
+            } else {
+                name.trim()
+            };
             preview_label.set_text(&format!("Project will be created in: {location}/{name}"));
         }
     });
@@ -496,14 +510,18 @@ where
 
         let entry = location_entry_for_browse.clone();
         let update_preview = update_preview_for_browse.clone();
-        file_dialog.select_folder(Some(&dialog_for_browse), gio::Cancellable::NONE, move |result| {
-            if let Ok(folder) = result {
-                if let Some(path) = folder.path() {
-                    entry.set_text(&path.to_string_lossy());
-                    update_preview();
+        file_dialog.select_folder(
+            Some(&dialog_for_browse),
+            gio::Cancellable::NONE,
+            move |result| {
+                if let Ok(folder) = result {
+                    if let Some(path) = folder.path() {
+                        entry.set_text(&path.to_string_lossy());
+                        update_preview();
+                    }
                 }
-            }
-        });
+            },
+        );
     });
 
     // Cancel Button Handler
@@ -517,11 +535,17 @@ where
     let parent_for_create = parent.clone();
     create_btn.connect_clicked(move |_| {
         let name = name_entry.text().to_string();
-        let name = if name.trim().is_empty() { "untitled".to_string() } else { name.trim().to_string() };
+        let name = if name.trim().is_empty() {
+            "untitled".to_string()
+        } else {
+            name.trim().to_string()
+        };
         let location = PathBuf::from(location_entry.text().to_string());
         let workspace_path = location.join(&name);
 
-        if let Ok(manager) = WorkspaceManager::init_workspace(&workspace_path, git_toggle.is_active()) {
+        if let Ok(manager) =
+            WorkspaceManager::init_workspace(&workspace_path, git_toggle.is_active())
+        {
             if notes_toggle.is_active() {
                 if let Ok(notes) = fetch_apple_notes() {
                     for (title, body) in notes {

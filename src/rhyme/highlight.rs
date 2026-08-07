@@ -502,7 +502,11 @@ const MERGE_THRESHOLD: f32 = 3.25;
 /// since rhyme schemes don't usually reach across a stanza break and
 /// stopping there keeps a long verse from comparing against an unrelated
 /// stanza just because it's within the flat line count.
-fn stanza_bounded_window_start(lines: &[LineSyllables], i: usize, stop_at_blank_line: bool) -> usize {
+fn stanza_bounded_window_start(
+    lines: &[LineSyllables],
+    i: usize,
+    stop_at_blank_line: bool,
+) -> usize {
     let mut start = i;
     for k in (0..i).rev() {
         if i - k > LINE_WINDOW || (stop_at_blank_line && lines[k].is_blank) {

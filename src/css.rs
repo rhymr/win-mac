@@ -1,5 +1,5 @@
 use grass::Options;
-use gtk::{gdk, CssProvider};
+use gtk::{CssProvider, gdk};
 use std::fs;
 
 const CSS_FILES: [&str; 10] = [

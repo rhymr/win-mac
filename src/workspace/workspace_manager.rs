@@ -1,5 +1,5 @@
-use std::path::{Path, PathBuf};
 use std::fs;
+use std::path::{Path, PathBuf};
 
 pub struct WorkspaceManager {
     pub root_path: PathBuf,
@@ -25,6 +25,8 @@ impl WorkspaceManager {
             git2::Repository::init(path).map_err(|e| e.to_string())?;
         }
 
-        Ok(Self { root_path: path.to_path_buf() })
+        Ok(Self {
+            root_path: path.to_path_buf(),
+        })
     }
 }

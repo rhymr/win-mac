@@ -3,8 +3,8 @@ use crate::workspace::workspace_controller::WorkspaceController;
 use futures_util::StreamExt;
 use gtk::prelude::*;
 use gtk::{
-    Align, Application, Box as GtkBox, Button, Label, ListBox, Orientation, ScrolledWindow, Spinner, TextBuffer,
-    TextView, Window,
+    Align, Application, Box as GtkBox, Button, Label, ListBox, Orientation, ScrolledWindow,
+    Spinner, TextBuffer, TextView, Window,
 };
 use std::path::PathBuf;
 use std::rc::Rc;
@@ -48,9 +48,18 @@ pub fn show_commit_dialog(app: &Application, controller: Rc<WorkspaceController>
             .build(),
     );
 
-    let files_list = ListBox::builder().selection_mode(gtk::SelectionMode::None).css_classes(vec!["commit-file-list"]).build();
+    let files_list = ListBox::builder()
+        .selection_mode(gtk::SelectionMode::None)
+        .css_classes(vec!["commit-file-list"])
+        .build();
     if changed.is_empty() {
-        files_list.append(&Label::builder().label("No changes to commit.").halign(Align::Start).css_classes(vec!["dim-label"]).build());
+        files_list.append(
+            &Label::builder()
+                .label("No changes to commit.")
+                .halign(Align::Start)
+                .css_classes(vec!["dim-label"])
+                .build(),
+        );
     } else {
         for (path, status) in &changed {
             let marker = match status {
@@ -58,11 +67,24 @@ pub fn show_commit_dialog(app: &Application, controller: Rc<WorkspaceController>
                 GitFileStatus::Renamed => "R",
                 GitFileStatus::Modified => "M",
             };
-            let rel = path.strip_prefix(&root).unwrap_or(path).display().to_string();
-            files_list.append(&Label::builder().label(format!("[{marker}]  {rel}")).halign(Align::Start).build());
+            let rel = path
+                .strip_prefix(&root)
+                .unwrap_or(path)
+                .display()
+                .to_string();
+            files_list.append(
+                &Label::builder()
+                    .label(format!("[{marker}]  {rel}"))
+                    .halign(Align::Start)
+                    .build(),
+            );
         }
     }
-    let files_scroll = ScrolledWindow::builder().vexpand(true).child(&files_list).css_classes(vec!["commit-file-scroll"]).build();
+    let files_scroll = ScrolledWindow::builder()
+        .vexpand(true)
+        .child(&files_list)
+        .css_classes(vec!["commit-file-scroll"])
+        .build();
     content.append(&files_scroll);
 
     content.append(
@@ -75,16 +97,26 @@ pub fn show_commit_dialog(app: &Application, controller: Rc<WorkspaceController>
     );
 
     let message_buffer = TextBuffer::builder().build();
-    let message_view = TextView::builder().buffer(&message_buffer).wrap_mode(gtk::WrapMode::Word).build();
-    let message_scroll = ScrolledWindow::builder().height_request(90).child(&message_view).css_classes(vec!["commit-message-box"]).build();
+    let message_view = TextView::builder()
+        .buffer(&message_buffer)
+        .wrap_mode(gtk::WrapMode::Word)
+        .build();
+    let message_scroll = ScrolledWindow::builder()
+        .height_request(90)
+        .child(&message_view)
+        .css_classes(vec!["commit-message-box"])
+        .build();
     content.append(&message_scroll);
 
     let action_box = GtkBox::new(Orientation::Horizontal, 10);
     action_box.set_halign(Align::End);
     action_box.set_margin_top(4);
     let cancel_btn = Button::builder().label("Cancel").build();
-    let commit_btn =
-        Button::builder().label("Commit").css_classes(vec!["suggested-action"]).sensitive(!changed.is_empty()).build();
+    let commit_btn = Button::builder()
+        .label("Commit")
+        .css_classes(vec!["suggested-action"])
+        .sensitive(!changed.is_empty())
+        .build();
     action_box.append(&cancel_btn);
     action_box.append(&commit_btn);
     content.append(&action_box);
@@ -96,8 +128,18 @@ pub fn show_commit_dialog(app: &Application, controller: Rc<WorkspaceController>
 
     let dialog_for_commit = dialog.clone();
     commit_btn.connect_clicked(move |_| {
-        let text = message_buffer.text(&message_buffer.start_iter(), &message_buffer.end_iter(), false).to_string();
-        let message = if text.trim().is_empty() { "Update".to_string() } else { text.trim().to_string() };
+        let text = message_buffer
+            .text(
+                &message_buffer.start_iter(),
+                &message_buffer.end_iter(),
+                false,
+            )
+            .to_string();
+        let message = if text.trim().is_empty() {
+            "Update".to_string()
+        } else {
+            text.trim().to_string()
+        };
 
         match GitController::new(&root).commit_all(&message) {
             Ok(_) => {
@@ -127,7 +169,11 @@ pub fn show_pull_dialog(app: &Application, controller: Rc<WorkspaceController>) 
         app,
         controller,
         "Update Project",
-        |branch| format!("Pull '{branch}' from {REMOTE}? This fast-forwards only — it won't merge or rebase if the branches have diverged."),
+        |branch| {
+            format!(
+                "Pull '{branch}' from {REMOTE}? This fast-forwards only — it won't merge or rebase if the branches have diverged."
+            )
+        },
         "Pull",
         |git| git.pull(REMOTE),
     );
@@ -141,9 +187,12 @@ pub fn show_fetch_dialog(app: &Application, controller: Rc<WorkspaceController>)
         return;
     };
 
-    let (dialog, content, status_label) = build_progress_dialog(&parent, "Fetch", &format!("Fetching from {REMOTE}…"));
+    let (dialog, content, status_label) =
+        build_progress_dialog(&parent, "Fetch", &format!("Fetching from {REMOTE}…"));
     dialog.present();
-    run_git_op(dialog, content, status_label, root, controller, |git| git.fetch(REMOTE));
+    run_git_op(dialog, content, status_label, root, controller, |git| {
+        git.fetch(REMOTE)
+    });
 }
 
 /// Shows a Cancel/[`action_label`] confirmation with `confirm_text(branch)`
@@ -167,12 +216,24 @@ fn confirm_then_run(
 
     let git = GitController::new(&root);
     if !git.has_remote(REMOTE) {
-        show_message_dialog(&parent, title, &format!("No '{REMOTE}' remote is configured for this project."));
+        show_message_dialog(
+            &parent,
+            title,
+            &format!("No '{REMOTE}' remote is configured for this project."),
+        );
         return;
     }
-    let branch = git.current_branch_name().unwrap_or_else(|| "HEAD".to_string());
+    let branch = git
+        .current_branch_name()
+        .unwrap_or_else(|| "HEAD".to_string());
 
-    let dialog = Window::builder().title(title).transient_for(&parent).modal(true).default_width(420).resizable(false).build();
+    let dialog = Window::builder()
+        .title(title)
+        .transient_for(&parent)
+        .modal(true)
+        .default_width(420)
+        .resizable(false)
+        .build();
 
     let content = GtkBox::builder()
         .orientation(Orientation::Vertical)
@@ -183,13 +244,20 @@ fn confirm_then_run(
         .margin_end(24)
         .build();
 
-    let message_label = Label::builder().label(confirm_text(&branch)).halign(Align::Start).wrap(true).build();
+    let message_label = Label::builder()
+        .label(confirm_text(&branch))
+        .halign(Align::Start)
+        .wrap(true)
+        .build();
     content.append(&message_label);
 
     let action_box = GtkBox::new(Orientation::Horizontal, 10);
     action_box.set_halign(Align::End);
     let cancel_btn = Button::builder().label("Cancel").build();
-    let confirm_btn = Button::builder().label(action_label).css_classes(vec!["suggested-action"]).build();
+    let confirm_btn = Button::builder()
+        .label(action_label)
+        .css_classes(vec!["suggested-action"])
+        .build();
     action_box.append(&cancel_btn);
     action_box.append(&confirm_btn);
     content.append(&action_box);
@@ -208,7 +276,12 @@ fn confirm_then_run(
     confirm_btn.connect_clicked(move |_| {
         content_for_confirm.remove(&action_box_for_confirm);
         message_label_for_confirm.set_text("Working…");
-        let spinner = Spinner::builder().spinning(true).width_request(20).height_request(20).halign(Align::Center).build();
+        let spinner = Spinner::builder()
+            .spinning(true)
+            .width_request(20)
+            .height_request(20)
+            .halign(Align::Center)
+            .build();
         content_for_confirm.append(&spinner);
 
         run_git_op(
@@ -228,8 +301,18 @@ fn confirm_then_run(
 /// `initial_text` — used directly by `show_fetch_dialog` (which has no
 /// confirmation step) and indirectly by `confirm_then_run`, which builds
 /// its own confirm step first and only reaches this shape once confirmed.
-fn build_progress_dialog(parent: &gtk::Window, title: &str, initial_text: &str) -> (Window, GtkBox, Label) {
-    let dialog = Window::builder().title(title).transient_for(parent).modal(true).default_width(420).resizable(false).build();
+fn build_progress_dialog(
+    parent: &gtk::Window,
+    title: &str,
+    initial_text: &str,
+) -> (Window, GtkBox, Label) {
+    let dialog = Window::builder()
+        .title(title)
+        .transient_for(parent)
+        .modal(true)
+        .default_width(420)
+        .resizable(false)
+        .build();
 
     let content = GtkBox::builder()
         .orientation(Orientation::Vertical)
@@ -240,9 +323,18 @@ fn build_progress_dialog(parent: &gtk::Window, title: &str, initial_text: &str) 
         .margin_end(24)
         .build();
 
-    let status_label = Label::builder().label(initial_text).halign(Align::Start).wrap(true).build();
+    let status_label = Label::builder()
+        .label(initial_text)
+        .halign(Align::Start)
+        .wrap(true)
+        .build();
     content.append(&status_label);
-    let spinner = Spinner::builder().spinning(true).width_request(20).height_request(20).halign(Align::Center).build();
+    let spinner = Spinner::builder()
+        .spinning(true)
+        .width_request(20)
+        .height_request(20)
+        .halign(Align::Center)
+        .build();
     content.append(&spinner);
 
     dialog.set_child(Some(&content));
@@ -293,7 +385,13 @@ fn run_git_op(
 }
 
 fn show_message_dialog(parent: &gtk::Window, title: &str, message: &str) {
-    let dialog = Window::builder().title(title).transient_for(parent).modal(true).default_width(380).resizable(false).build();
+    let dialog = Window::builder()
+        .title(title)
+        .transient_for(parent)
+        .modal(true)
+        .default_width(380)
+        .resizable(false)
+        .build();
 
     let content = GtkBox::builder()
         .orientation(Orientation::Vertical)
@@ -303,7 +401,13 @@ fn show_message_dialog(parent: &gtk::Window, title: &str, message: &str) {
         .margin_start(24)
         .margin_end(24)
         .build();
-    content.append(&Label::builder().label(message).halign(Align::Start).wrap(true).build());
+    content.append(
+        &Label::builder()
+            .label(message)
+            .halign(Align::Start)
+            .wrap(true)
+            .build(),
+    );
 
     let close_box = GtkBox::new(Orientation::Horizontal, 0);
     close_box.set_halign(Align::End);

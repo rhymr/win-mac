@@ -139,10 +139,22 @@ pub fn count_words(text: &str) -> u32 {
     count
 }
 
-const ONES: [&str; 10] = ["", "one", "two", "three", "four", "five", "six", "seven", "eight", "nine"];
-const TENS: [&str; 10] = ["", "ten", "twenty", "thirty", "forty", "fifty", "sixty", "seventy", "eighty", "ninety"];
+const ONES: [&str; 10] = [
+    "", "one", "two", "three", "four", "five", "six", "seven", "eight", "nine",
+];
+const TENS: [&str; 10] = [
+    "", "ten", "twenty", "thirty", "forty", "fifty", "sixty", "seventy", "eighty", "ninety",
+];
 const TEENS: [&str; 9] = [
-    "eleven", "twelve", "thirteen", "fourteen", "fifteen", "sixteen", "seventeen", "eighteen", "nineteen",
+    "eleven",
+    "twelve",
+    "thirteen",
+    "fourteen",
+    "fifteen",
+    "sixteen",
+    "seventeen",
+    "eighteen",
+    "nineteen",
 ];
 
 fn number_to_words(num: i64) -> String {

@@ -10,14 +10,10 @@ fn main() -> glib::ExitCode {
     let resource_bytes = include_bytes!(concat!(env!("OUT_DIR"), "/compiled.gresource"));
     let resource_data = glib::Bytes::from(&resource_bytes[..]);
     gio::resources_register(
-        &Resource::from_data(&resource_data)
-            .expect("Failed to load resources")
+        &Resource::from_data(&resource_data).expect("Failed to load resources"),
     );
 
-    println!(
-        "Current dir = {:?}",
-        std::env::current_dir().unwrap()
-    );
+    println!("Current dir = {:?}", std::env::current_dir().unwrap());
 
     // Compile scss files into css files
     if let Err(e) = css::compile_sass() {

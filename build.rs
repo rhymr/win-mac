@@ -34,9 +34,5 @@ fn main() {
     }
 
     // 2. Compile GTK Resources
-    glib_build_tools::compile_resources(
-        &["assets"],
-        "assets/resources.xml",
-        "compiled.gresource",
-    );
+    glib_build_tools::compile_resources(&["assets"], "assets/resources.xml", "compiled.gresource");
 }

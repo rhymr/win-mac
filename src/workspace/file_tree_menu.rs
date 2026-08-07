@@ -60,8 +60,15 @@ mod hint {
 fn anchor_below(popover: &Popover, hbox: &GtkBox, frame: &gtk::Frame) {
     let width = hbox.width().max(1);
     let height = hbox.height().max(1);
-    let (x, y) = hbox.translate_coordinates(frame, 0.0, 0.0).unwrap_or((0.0, 0.0));
-    popover.set_pointing_to(Some(&gdk::Rectangle::new(x as i32, y as i32 + height, width, 1)));
+    let (x, y) = hbox
+        .translate_coordinates(frame, 0.0, 0.0)
+        .unwrap_or((0.0, 0.0));
+    popover.set_pointing_to(Some(&gdk::Rectangle::new(
+        x as i32,
+        y as i32 + height,
+        width,
+        1,
+    )));
     popover.set_position(gtk::PositionType::Bottom);
 }
 
@@ -78,7 +85,8 @@ impl FileTree {
                 return glib::Propagation::Proceed;
             };
             let index = row.index();
-            let Some((path, _)) = file_tree_ref.entries.borrow().get(index as usize).cloned() else {
+            let Some((path, _)) = file_tree_ref.entries.borrow().get(index as usize).cloned()
+            else {
                 return glib::Propagation::Proceed;
             };
             let Some(hbox) = row.child().and_then(|w| w.downcast::<GtkBox>().ok()) else {
@@ -143,7 +151,9 @@ impl FileTree {
         let target_dir = if is_dir {
             path.clone()
         } else {
-            path.parent().map(Path::to_path_buf).unwrap_or_else(|| path.clone())
+            path.parent()
+                .map(Path::to_path_buf)
+                .unwrap_or_else(|| path.clone())
         };
 
         // New (opens a File/Folder submenu)
@@ -190,7 +200,9 @@ impl FileTree {
             copy_path_item.connect_clicked(move |_| {
                 popover_ref.popdown();
                 if let Some(display) = gdk::Display::default() {
-                    display.clipboard().set_text(&path_for_copy_path.to_string_lossy());
+                    display
+                        .clipboard()
+                        .set_text(&path_for_copy_path.to_string_lossy());
                 }
             });
         }
@@ -227,7 +239,11 @@ impl FileTree {
 
             menu_box.append(&Separator::new(Orientation::Horizontal));
 
-            let delete_item = menu_item_button("Delete\u{2026}", Some(hint::DELETE), Some("destructive-menu-item"));
+            let delete_item = menu_item_button(
+                "Delete\u{2026}",
+                Some(hint::DELETE),
+                Some("destructive-menu-item"),
+            );
             menu_box.append(&delete_item);
 
             let popover_ref = popover.clone();
@@ -302,7 +318,11 @@ impl FileTree {
             });
         }
 
-        let result = if is_dir { fs::create_dir(&candidate) } else { fs::write(&candidate, "") };
+        let result = if is_dir {
+            fs::create_dir(&candidate)
+        } else {
+            fs::write(&candidate, "")
+        };
         if let Err(e) = result {
             eprintln!("Failed to create {candidate:?}: {e}");
             return;
@@ -343,11 +363,18 @@ impl FileTree {
     }
 
     fn start_rename(&self, hbox: &GtkBox, label: &Label, path: PathBuf) {
-        let current_name = path.file_name().and_then(|n| n.to_str()).unwrap_or("").to_string();
+        let current_name = path
+            .file_name()
+            .and_then(|n| n.to_str())
+            .unwrap_or("")
+            .to_string();
         // Same .txt-hiding as the tree display — commit_rename() restores
         // it if the user doesn't type a different extension.
-        let prefill =
-            if path.is_dir() { current_name } else { crate::workspace::file_tree::strip_txt_extension(&current_name).to_string() };
+        let prefill = if path.is_dir() {
+            current_name
+        } else {
+            crate::workspace::file_tree::strip_txt_extension(&current_name).to_string()
+        };
 
         let entry = Entry::new();
         entry.set_text(&prefill);
@@ -530,7 +557,11 @@ impl FileTree {
         let Some(window) = hbox.root().and_then(|r| r.downcast::<Window>().ok()) else {
             return;
         };
-        let name = path.file_name().and_then(|n| n.to_str()).unwrap_or("this item").to_string();
+        let name = path
+            .file_name()
+            .and_then(|n| n.to_str())
+            .unwrap_or("this item")
+            .to_string();
         let kind = if is_dir { "folder" } else { "file" };
 
         let dialog = Window::builder()
@@ -548,7 +579,9 @@ impl FileTree {
         content.set_margin_start(20);
         content.set_margin_end(20);
 
-        let message = Label::new(Some(&format!("Delete {kind} \u{201C}{name}\u{201D}? This can\u{2019}t be undone.")));
+        let message = Label::new(Some(&format!(
+            "Delete {kind} \u{201C}{name}\u{201D}? This can\u{2019}t be undone."
+        )));
         message.set_wrap(true);
         message.set_halign(Align::Start);
 
@@ -557,7 +590,10 @@ impl FileTree {
         action_box.set_margin_top(8);
 
         let cancel_btn = Button::builder().label("Cancel").build();
-        let delete_btn = Button::builder().label("Delete").css_classes(vec!["destructive-action"]).build();
+        let delete_btn = Button::builder()
+            .label("Delete")
+            .css_classes(vec!["destructive-action"])
+            .build();
         action_box.append(&cancel_btn);
         action_box.append(&delete_btn);
 
@@ -581,7 +617,11 @@ impl FileTree {
     }
 
     fn delete_path(&self, path: PathBuf) {
-        let result = if path.is_dir() { fs::remove_dir_all(&path) } else { fs::remove_file(&path) };
+        let result = if path.is_dir() {
+            fs::remove_dir_all(&path)
+        } else {
+            fs::remove_file(&path)
+        };
         match result {
             Ok(()) => {
                 if let Some(workspace) = self.workspace.borrow().as_ref() {

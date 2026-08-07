@@ -1,13 +1,13 @@
 use crate::utils::file_ops::FileOps;
+use crate::workspace::file_tree::FileTree;
+use crate::workspace::text_editor::TextEditor;
+use crate::workspace::workspace_controller::WorkspaceController;
 use gtk::prelude::*;
 use gtk::{Box, Button, Frame, Label, Notebook, TextBuffer, TextView, Window};
 use std::cell::RefCell;
 use std::fs;
 use std::path::{Path, PathBuf};
 use std::rc::Rc;
-use crate::workspace::file_tree::FileTree;
-use crate::workspace::text_editor::TextEditor;
-use crate::workspace::workspace_controller::WorkspaceController;
 
 pub struct Workspace {
     frame: Frame,
@@ -74,7 +74,7 @@ impl Workspace {
         if self.notebook.n_pages() == 1 && self.open_files.borrow().is_empty() {
             self.notebook.remove_page(Some(0));
         }
-        
+
         // Ensure the controller is still referenced
         let controller = self.controller.clone();
         let (page_num, text_editor) = add_new_tab(&self.notebook, path, content, Some(controller));
@@ -406,7 +406,8 @@ impl Workspace {
         if self.notebook.n_pages() <= 0 {
             self.notebook.remove_css_class("has-open-files");
             let empty_state = self.create_empty_state();
-            self.notebook.append_page(&empty_state, Option::<&gtk::Widget>::None);
+            self.notebook
+                .append_page(&empty_state, Option::<&gtk::Widget>::None);
             self.notebook.set_show_tabs(false);
         }
 
@@ -437,7 +438,12 @@ impl Workspace {
     }
 }
 
-fn add_new_tab(notebook: &Notebook, path: &Path, content: &str, controller: Option<Rc<WorkspaceController>>) -> (u32, TextEditor) {
+fn add_new_tab(
+    notebook: &Notebook,
+    path: &Path,
+    content: &str,
+    controller: Option<Rc<WorkspaceController>>,
+) -> (u32, TextEditor) {
     // Create text editor
     let text_editor = TextEditor::new();
     text_editor.set_text(content);
@@ -454,9 +460,12 @@ fn add_new_tab(notebook: &Notebook, path: &Path, content: &str, controller: Opti
         .build();
 
     // Create the label
-    let label = Label::new(Some(&path.file_name()
-        .and_then(|name| name.to_str())
-        .unwrap_or("Untitled")));
+    let label = Label::new(Some(
+        &path
+            .file_name()
+            .and_then(|name| name.to_str())
+            .unwrap_or("Untitled"),
+    ));
 
     // Create close button
     let close_button = Button::builder()
@@ -502,5 +511,8 @@ fn add_new_tab(notebook: &Notebook, path: &Path, content: &str, controller: Opti
 /// *two* `first_child()` hops, not one, since the ScrolledWindow itself
 /// obviously isn't a TextView.
 fn text_view_for_page(page: &gtk::Widget) -> Option<TextView> {
-    page.first_child()?.first_child()?.downcast::<TextView>().ok()
+    page.first_child()?
+        .first_child()?
+        .downcast::<TextView>()
+        .ok()
 }

@@ -1,7 +1,9 @@
 use gio::prelude::*;
 use glib::subclass::prelude::*;
 use gtk::prelude::*;
-use sourceview5::{CompletionCell, CompletionColumn, CompletionContext, CompletionProposal, CompletionProvider};
+use sourceview5::{
+    CompletionCell, CompletionColumn, CompletionContext, CompletionProposal, CompletionProvider,
+};
 use std::future::Future;
 use std::pin::Pin;
 use std::sync::OnceLock;
@@ -116,10 +118,18 @@ mod imp {
             keyval: gtk::gdk::Key,
             _state: gtk::gdk::ModifierType,
         ) -> bool {
-            matches!(keyval, gtk::gdk::Key::Tab | gtk::gdk::Key::Return | gtk::gdk::Key::KP_Enter)
+            matches!(
+                keyval,
+                gtk::gdk::Key::Tab | gtk::gdk::Key::Return | gtk::gdk::Key::KP_Enter
+            )
         }
 
-        fn display(&self, _context: &CompletionContext, proposal: &CompletionProposal, cell: &CompletionCell) {
+        fn display(
+            &self,
+            _context: &CompletionContext,
+            proposal: &CompletionProposal,
+            cell: &CompletionCell,
+        ) {
             if cell.column() == CompletionColumn::TypedText {
                 if let Some(word) = proposal.downcast_ref::<super::WordProposal>() {
                     cell.set_text(Some(&word.word()));

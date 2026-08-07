@@ -1,8 +1,11 @@
-use std::collections::BTreeMap;
 use datamuse_api_rs::{DatamuseClient, EndPoint, RelatedType, Vocabulary};
 use gtk::prelude::*;
-use gtk::{Box as GtkBox, Button, Entry, Frame, GestureClick, Label, ListBox, Orientation, ScrolledWindow, pango};
+use gtk::{
+    Box as GtkBox, Button, Entry, Frame, GestureClick, Label, ListBox, Orientation, ScrolledWindow,
+    pango,
+};
 use std::cell::{Cell, RefCell};
+use std::collections::BTreeMap;
 use std::collections::HashMap;
 use std::rc::Rc;
 use tokio::runtime::Runtime;
@@ -19,7 +22,10 @@ impl RhymeSearch {
         // Create a vertical container for the input field and results
         let container = GtkBox::builder()
             .orientation(Orientation::Vertical)
-            .css_classes(vec!["rhyme-search-container-margin", "rhyme-search-container-bg"])
+            .css_classes(vec![
+                "rhyme-search-container-margin",
+                "rhyme-search-container-bg",
+            ])
             .spacing(5)
             .build();
 
@@ -37,9 +43,7 @@ impl RhymeSearch {
             .build();
 
         // Button to submit the word
-        let submit_button = Button::builder()
-            .label("Submit")
-            .build();
+        let submit_button = Button::builder().label("Submit").build();
 
         input_box.append(&word_input);
         input_box.append(&submit_button);
@@ -108,7 +112,13 @@ impl RhymeSearch {
 
         let handle_submit = move |input: &str| {
             if !input.is_empty() {
-                if let Some(word) = entry_cloned.text().as_str().trim().split_whitespace().next() {
+                if let Some(word) = entry_cloned
+                    .text()
+                    .as_str()
+                    .trim()
+                    .split_whitespace()
+                    .next()
+                {
                     // Clear old results
                     let mut child = rhyming_words_list_cloned.first_child();
                     while let Some(widget) = child {
@@ -144,7 +154,8 @@ impl RhymeSearch {
 
                         // Combine all words in the group into a single comma-separated string
                         let words_combined = words.join(", ");
-                        let words_markup = format!("<span color='#ffffff'>{}</span>", words_combined);
+                        let words_markup =
+                            format!("<span color='#ffffff'>{}</span>", words_combined);
                         let words_label = Label::new(None);
                         words_label.set_markup(&words_markup);
                         words_label.set_wrap(true);
@@ -218,10 +229,18 @@ fn fetch_rhymes(word: &str) -> Vec<(String, usize)> {
         // TODO: Let user filter types in their results
         // Create a vector to hold all requests
         let requests = vec![
-            client.new_query(Vocabulary::EnglishWiki, EndPoint::Words).related(RelatedType::Rhyme, word),
-            client.new_query(Vocabulary::EnglishWiki, EndPoint::Words).related(RelatedType::ApproximateRhyme, word),
-            client.new_query(Vocabulary::EnglishWiki, EndPoint::Words).related(RelatedType::Homophones, word),
-            client.new_query(Vocabulary::EnglishWiki, EndPoint::Words).sounds_like(word),
+            client
+                .new_query(Vocabulary::EnglishWiki, EndPoint::Words)
+                .related(RelatedType::Rhyme, word),
+            client
+                .new_query(Vocabulary::EnglishWiki, EndPoint::Words)
+                .related(RelatedType::ApproximateRhyme, word),
+            client
+                .new_query(Vocabulary::EnglishWiki, EndPoint::Words)
+                .related(RelatedType::Homophones, word),
+            client
+                .new_query(Vocabulary::EnglishWiki, EndPoint::Words)
+                .sounds_like(word),
         ];
 
         let mut unique_words: HashMap<String, usize> = HashMap::new(); // Use a HashMap to store unique words

@@ -1,11 +1,11 @@
+use crate::rhyme::RhymeHighlight;
 use crate::utils::settings::Settings;
 use crate::workspace::completion::WordCompletionProvider;
-use crate::rhyme::RhymeHighlight;
 use gtk::prelude::*;
 use gtk::{Frame, ScrolledWindow};
-use sourceview5::{Buffer as SourceBuffer, Completion, Gutter, View as SourceView};
-use sourceview5::prelude::{BufferExt, ViewExt, GutterRendererExt, GutterRendererTextExt};
 use sourceview5::GutterRendererText;
+use sourceview5::prelude::{BufferExt, GutterRendererExt, GutterRendererTextExt, ViewExt};
+use sourceview5::{Buffer as SourceBuffer, Completion, Gutter, View as SourceView};
 use std::cell::{Cell, RefCell};
 use std::path::PathBuf;
 use std::rc::Rc;
@@ -66,7 +66,9 @@ impl TextEditor {
             let Some(path) = path_ref.borrow().clone() else {
                 return;
             };
-            let text = buf.text(&buf.start_iter(), &buf.end_iter(), false).to_string();
+            let text = buf
+                .text(&buf.start_iter(), &buf.end_iter(), false)
+                .to_string();
 
             let this_generation = generation_ref.get() + 1;
             generation_ref.set(this_generation);
@@ -96,7 +98,9 @@ impl TextEditor {
 
         let scheme_manager = sourceview5::StyleSchemeManager::default();
         scheme_manager.append_search_path("assets/styles");
-        let style_scheme = scheme_manager.scheme("rhymr").expect("Failed to load rhymr style scheme");
+        let style_scheme = scheme_manager
+            .scheme("rhymr")
+            .expect("Failed to load rhymr style scheme");
         buffer.set_style_scheme(Some(&style_scheme));
 
         // Configure the gutter
@@ -115,9 +119,7 @@ impl TextEditor {
             .child(&source_view)
             .build();
 
-        let frame = Frame::builder()
-            .child(&scroll)
-            .build();
+        let frame = Frame::builder().child(&scroll).build();
 
         let editor = Self {
             frame,
@@ -199,11 +201,9 @@ impl TextEditor {
     }
 
     pub fn get_text(&self) -> String {
-        self.buffer.text(
-            &self.buffer.start_iter(),
-            &self.buffer.end_iter(),
-            false
-        ).to_string()
+        self.buffer
+            .text(&self.buffer.start_iter(), &self.buffer.end_iter(), false)
+            .to_string()
     }
 
     /// Associate this editor with the file it should auto-save to.
@@ -222,7 +222,6 @@ impl TextEditor {
     pub fn connect_changed(&self, f: impl Fn() + 'static) {
         self.buffer.connect_changed(move |_| f());
     }
-
 }
 
 impl Clone for TextEditor {

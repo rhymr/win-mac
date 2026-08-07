@@ -1,11 +1,11 @@
-use gtk::prelude::*;
-use gtk::{Application, Box as GtkBox, Label, Orientation, Paned};
-use std::cell::Cell;
-use std::rc::Rc;
 use crate::ui::rhyme_search::RhymeSearch;
 use crate::workspace::file_tree::FileTree;
 use crate::workspace::workspace::Workspace;
 use crate::workspace::workspace_controller::WorkspaceController;
+use gtk::prelude::*;
+use gtk::{Application, Box as GtkBox, Label, Orientation, Paned};
+use std::cell::Cell;
+use std::rc::Rc;
 
 pub fn build_ui(app: &Application) -> (gtk::ApplicationWindow, Rc<WorkspaceController>) {
     // CSS is loaded once, up front, in main.rs — the welcome window needs it
@@ -64,7 +64,11 @@ fn create_status_bar(workspace_controller: &Rc<WorkspaceController>) -> GtkBox {
     status_bar.append(&word_count_label);
 
     workspace_controller.set_word_count_listener(move |count| {
-        let label = if count == 1 { "1 word".to_string() } else { format!("{count} words") };
+        let label = if count == 1 {
+            "1 word".to_string()
+        } else {
+            format!("{count} words")
+        };
         word_count_label.set_text(&label);
     });
     workspace_controller.refresh_word_count();
@@ -73,14 +77,16 @@ fn create_status_bar(workspace_controller: &Rc<WorkspaceController>) -> GtkBox {
 }
 
 // Create the file tree / rhyme search / editor split
-fn create_content_layout(workspace_controller: &Rc<WorkspaceController>) -> (Paned, FileTree, Rc<Workspace>) {
+fn create_content_layout(
+    workspace_controller: &Rc<WorkspaceController>,
+) -> (Paned, FileTree, Rc<Workspace>) {
     // Create the FileTree component
     let mut file_tree = FileTree::new();
 
     // Create the Workspace instance with the FileTree
     let workspace = Rc::new(Workspace::new(
         Rc::clone(workspace_controller),
-        Some(file_tree.clone())
+        Some(file_tree.clone()),
     ));
 
     // Set the workspace reference in the file tree

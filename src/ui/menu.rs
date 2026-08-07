@@ -1,9 +1,9 @@
+use crate::workspace::workspace_controller::WorkspaceController;
+use gio::Menu;
 use gtk::prelude::*;
-use gtk::{gio, Application};
+use gtk::{Application, gio};
 use std::path::PathBuf;
 use std::rc::Rc;
-use gio::Menu;
-use crate::workspace::workspace_controller::WorkspaceController;
 
 // GTK's own "<Primary>" accelerator modifier is documented to map to Cmd on
 // macOS and Ctrl elsewhere, but that mapping depends on the platform's GDK
@@ -100,13 +100,13 @@ fn git(app: &Application, workspace_controller: Rc<WorkspaceController>) -> Menu
 
 fn help(app: &Application) -> Menu {
     let help_menu = Menu::new();
-    
+
     // Documentation section
     let docs_section = gio::Menu::new();
     docs_section.append(Some("Documentation"), Some("app.docs"));
-    docs_section.append(Some("Report Issue"), Some("app.report-issue")); 
+    docs_section.append(Some("Report Issue"), Some("app.report-issue"));
     help_menu.insert_section(0, None, &docs_section);
-    
+
     // About section
     let about_section = gio::Menu::new();
     about_section.append(Some("About"), Some("app.about"));
@@ -130,7 +130,7 @@ fn help(app: &Application) -> Menu {
     });
     app.add_action(&docs_action);
 
-    // Report issue action 
+    // Report issue action
     let report_action = gio::SimpleAction::new("report-issue", None);
     let app_weak = app.downgrade();
     report_action.connect_activate(move |_, _| {
@@ -190,9 +190,16 @@ pub fn file(app: &Application, workspace_controller: Rc<WorkspaceController>) ->
     // Recent Projects (submenu) + Close Project
     let recent_menu = gio::Menu::new();
     for path in crate::utils::recent_workspaces::load_recent_workspaces() {
-        let name = path.file_name().and_then(|n| n.to_str()).unwrap_or("Workspace").to_string();
+        let name = path
+            .file_name()
+            .and_then(|n| n.to_str())
+            .unwrap_or("Workspace")
+            .to_string();
         let item = gio::MenuItem::new(Some(&name), None);
-        item.set_action_and_target_value(Some("app.open-recent"), Some(&path.to_string_lossy().to_variant()));
+        item.set_action_and_target_value(
+            Some("app.open-recent"),
+            Some(&path.to_string_lossy().to_variant()),
+        );
         recent_menu.append_item(&item);
     }
 
@@ -363,4 +370,4 @@ pub fn file(app: &Application, workspace_controller: Rc<WorkspaceController>) ->
     app.set_accels_for_action("app.preferences", &[&accel("", "comma")]);
 
     file_menu
-} 
+}

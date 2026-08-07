@@ -22,7 +22,11 @@ pub fn load_recent_workspaces() -> Vec<PathBuf> {
         return Vec::new();
     };
 
-    contents.lines().map(PathBuf::from).filter(|p| p.is_dir()).collect()
+    contents
+        .lines()
+        .map(PathBuf::from)
+        .filter(|p| p.is_dir())
+        .collect()
 }
 
 /// Record `workspace_root` as the most recently opened workspace, moving it
