@@ -1,4 +1,4 @@
-use crate::workspace::workspace_controller::WorkspaceController;
+use crate::workspace::controller::WorkspaceController;
 use gio::Menu;
 use gtk::prelude::*;
 use gtk::{Application, gio};
@@ -56,7 +56,7 @@ fn git(app: &Application, workspace_controller: Rc<WorkspaceController>) -> Menu
     let commit_action = gio::SimpleAction::new("git-commit", None);
     commit_action.connect_activate(move |_, _| {
         if let Some(app) = app_weak.upgrade() {
-            crate::ui::git_dialogs::show_commit_dialog(&app, controller.clone());
+            crate::git::dialog::show_commit_dialog(&app, controller.clone());
         }
     });
     app.add_action(&commit_action);
@@ -66,7 +66,7 @@ fn git(app: &Application, workspace_controller: Rc<WorkspaceController>) -> Menu
     let push_action = gio::SimpleAction::new("git-push", None);
     push_action.connect_activate(move |_, _| {
         if let Some(app) = app_weak.upgrade() {
-            crate::ui::git_dialogs::show_push_dialog(&app, controller.clone());
+            crate::git::dialog::show_push_dialog(&app, controller.clone());
         }
     });
     app.add_action(&push_action);
@@ -76,7 +76,7 @@ fn git(app: &Application, workspace_controller: Rc<WorkspaceController>) -> Menu
     let pull_action = gio::SimpleAction::new("git-pull", None);
     pull_action.connect_activate(move |_, _| {
         if let Some(app) = app_weak.upgrade() {
-            crate::ui::git_dialogs::show_pull_dialog(&app, controller.clone());
+            crate::git::dialog::show_pull_dialog(&app, controller.clone());
         }
     });
     app.add_action(&pull_action);
@@ -86,7 +86,7 @@ fn git(app: &Application, workspace_controller: Rc<WorkspaceController>) -> Menu
     let fetch_action = gio::SimpleAction::new("git-fetch", None);
     fetch_action.connect_activate(move |_, _| {
         if let Some(app) = app_weak.upgrade() {
-            crate::ui::git_dialogs::show_fetch_dialog(&app, controller.clone());
+            crate::git::dialog::show_fetch_dialog(&app, controller.clone());
         }
     });
     app.add_action(&fetch_action);
@@ -116,16 +116,16 @@ fn help(app: &Application) -> Menu {
     let docs_action = gio::SimpleAction::new("docs", None);
     let app_weak = app.downgrade();
     docs_action.connect_activate(move |_, _| {
-        if let Some(app) = app_weak.upgrade() {
-            if let Some(window) = app.active_window() {
-                let launcher = gtk::UriLauncher::new("https://github.com/rhymr/win-mac");
-                let ctx = glib::MainContext::default();
-                ctx.spawn_local(async move {
-                    if let Err(e) = launcher.launch_future(Some(&window)).await {
-                        eprintln!("Failed to open docs: {}", e);
-                    }
-                });
-            }
+        if let Some(app) = app_weak.upgrade()
+            && let Some(window) = app.active_window()
+        {
+            let launcher = gtk::UriLauncher::new("https://github.com/rhymr/win-mac");
+            let ctx = glib::MainContext::default();
+            ctx.spawn_local(async move {
+                if let Err(e) = launcher.launch_future(Some(&window)).await {
+                    eprintln!("Failed to open docs: {}", e);
+                }
+            });
         }
     });
     app.add_action(&docs_action);
@@ -134,16 +134,16 @@ fn help(app: &Application) -> Menu {
     let report_action = gio::SimpleAction::new("report-issue", None);
     let app_weak = app.downgrade();
     report_action.connect_activate(move |_, _| {
-        if let Some(app) = app_weak.upgrade() {
-            if let Some(window) = app.active_window() {
-                let launcher = gtk::UriLauncher::new("https://github.com/rhymr/win-mac/issues");
-                let ctx = glib::MainContext::default();
-                ctx.spawn_local(async move {
-                    if let Err(e) = launcher.launch_future(Some(&window)).await {
-                        eprintln!("Failed to open issue tracker: {}", e);
-                    }
-                });
-            }
+        if let Some(app) = app_weak.upgrade()
+            && let Some(window) = app.active_window()
+        {
+            let launcher = gtk::UriLauncher::new("https://github.com/rhymr/win-mac/issues");
+            let ctx = glib::MainContext::default();
+            ctx.spawn_local(async move {
+                if let Err(e) = launcher.launch_future(Some(&window)).await {
+                    eprintln!("Failed to open issue tracker: {}", e);
+                }
+            });
         }
     });
     app.add_action(&report_action);
@@ -152,21 +152,21 @@ fn help(app: &Application) -> Menu {
     let about_action = gio::SimpleAction::new("about", None);
     let app_weak = app.downgrade();
     about_action.connect_activate(move |_, _| {
-        if let Some(app) = app_weak.upgrade() {
-            if let Some(window) = app.active_window() {
-                let dialog = gtk::AboutDialog::builder()
-                    .program_name("Rhymr")
-                    .version("0.1.0")
-                    .website("https://rhymr.app")
-                    .website_label("Visit Website")
-                    .authors(vec!["Rhymr Team".to_string()])
-                    .logo_icon_name("text.svg")
-                    .modal(true)
-                    .transient_for(&window)
-                    .build();
+        if let Some(app) = app_weak.upgrade()
+            && let Some(window) = app.active_window()
+        {
+            let dialog = gtk::AboutDialog::builder()
+                .program_name("Rhymr")
+                .version("2026.1")
+                .website("https://rhymr.app")
+                .website_label("Visit Website")
+                .authors(vec!["Rhymr Team".to_string()])
+                .logo_icon_name("text.svg")
+                .modal(true)
+                .transient_for(&window)
+                .build();
 
-                dialog.present();
-            }
+            dialog.present();
         }
     });
     app.add_action(&about_action);
@@ -189,7 +189,7 @@ pub fn file(app: &Application, workspace_controller: Rc<WorkspaceController>) ->
 
     // Recent Projects (submenu) + Close Project
     let recent_menu = gio::Menu::new();
-    for path in crate::utils::recent_workspaces::load_recent_workspaces() {
+    for path in crate::workspace::recent::load_recent_workspaces() {
         let name = path
             .file_name()
             .and_then(|n| n.to_str())
@@ -236,7 +236,7 @@ pub fn file(app: &Application, workspace_controller: Rc<WorkspaceController>) ->
     let preferences_action = gio::SimpleAction::new("preferences", None);
     preferences_action.connect_activate(move |_, _| {
         if let Some(app) = app_weak.upgrade() {
-            crate::ui::settings_dialog::show_settings_dialog(&app, Some(controller.clone()));
+            crate::setting::dialog::show_settings_dialog(&app, Some(controller.clone()));
         }
     });
     app.add_action(&preferences_action);
@@ -262,10 +262,10 @@ pub fn file(app: &Application, workspace_controller: Rc<WorkspaceController>) ->
     let app_weak = app.downgrade();
     let open_action = gio::SimpleAction::new("open", None);
     open_action.connect_activate(move |_, _| {
-        if let Some(app) = app_weak.upgrade() {
-            if let Some(window) = app.active_window() {
-                controller.handle_open_file(&window);
-            }
+        if let Some(app) = app_weak.upgrade()
+            && let Some(window) = app.active_window()
+        {
+            controller.handle_open_file(&window);
         }
     });
     app.add_action(&open_action);
@@ -291,9 +291,9 @@ pub fn file(app: &Application, workspace_controller: Rc<WorkspaceController>) ->
             window.close();
         }
         let app_for_welcome = app.clone();
-        crate::ui::welcome::show_welcome_dialog(&app, move |workspace_path| {
-            crate::utils::recent_workspaces::record_recent_workspace(&workspace_path);
-            let (_window, controller) = crate::ui::layout::build_ui(&app_for_welcome);
+        crate::app::welcome::show_welcome_dialog(&app, move |workspace_path| {
+            crate::workspace::recent::record_recent_workspace(&workspace_path);
+            let (_window, controller) = crate::app::layout::build_ui(&app_for_welcome);
             controller.set_root_path(workspace_path);
         });
     });
@@ -304,10 +304,10 @@ pub fn file(app: &Application, workspace_controller: Rc<WorkspaceController>) ->
     let app_weak = app.downgrade();
     let save_action = gio::SimpleAction::new("save", None);
     save_action.connect_activate(move |_, _| {
-        if let Some(app) = app_weak.upgrade() {
-            if let Some(window) = app.active_window() {
-                controller.handle_save_file(&window);
-            }
+        if let Some(app) = app_weak.upgrade()
+            && let Some(window) = app.active_window()
+        {
+            controller.handle_save_file(&window);
         }
     });
     app.add_action(&save_action);
@@ -317,10 +317,10 @@ pub fn file(app: &Application, workspace_controller: Rc<WorkspaceController>) ->
     let app_weak = app.downgrade();
     let save_as_action = gio::SimpleAction::new("save-as", None);
     save_as_action.connect_activate(move |_, _| {
-        if let Some(app) = app_weak.upgrade() {
-            if let Some(window) = app.active_window() {
-                controller.handle_save_as_file(&window);
-            }
+        if let Some(app) = app_weak.upgrade()
+            && let Some(window) = app.active_window()
+        {
+            controller.handle_save_as_file(&window);
         }
     });
     app.add_action(&save_as_action);
@@ -350,10 +350,10 @@ pub fn file(app: &Application, workspace_controller: Rc<WorkspaceController>) ->
     let app_weak = app.downgrade();
     let close_action = gio::SimpleAction::new("close-tab", None);
     close_action.connect_activate(move |_, _| {
-        if let Some(app) = app_weak.upgrade() {
-            if let Some(window) = app.active_window() {
-                controller.handle_close_tab(&window);
-            }
+        if let Some(app) = app_weak.upgrade()
+            && let Some(window) = app.active_window()
+        {
+            controller.handle_close_tab(&window);
         }
     });
     app.add_action(&close_action);

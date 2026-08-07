@@ -21,13 +21,12 @@ impl FileOps {
                 dialog.set_title("Open File");
                 dialog.set_modal(true);
 
-                if let Ok(file) = dialog.open_future(parent_window.as_ref()).await {
-                    if let Some(path) = file.path() {
-                        if let Ok(content) = fs::read_to_string(&path) {
-                            let _ = sender.lock().unwrap().try_send(Some((path, content)));
-                            return;
-                        }
-                    }
+                if let Ok(file) = dialog.open_future(parent_window.as_ref()).await
+                    && let Some(path) = file.path()
+                    && let Ok(content) = fs::read_to_string(&path)
+                {
+                    let _ = sender.lock().unwrap().try_send(Some((path, content)));
+                    return;
                 }
                 let _ = sender.lock().unwrap().try_send(None);
             }
@@ -42,10 +41,10 @@ impl FileOps {
         path: Option<PathBuf>,
         parent_window: Option<Window>,
     ) -> Option<PathBuf> {
-        if let Some(path) = path {
-            if fs::write(&path, &content).is_ok() {
-                return Some(path);
-            }
+        if let Some(path) = path
+            && fs::write(&path, &content).is_ok()
+        {
+            return Some(path);
         }
 
         let context = MainContext::default();
@@ -59,13 +58,12 @@ impl FileOps {
                 dialog.set_title("Save File");
                 dialog.set_modal(true);
 
-                if let Ok(file) = dialog.save_future(parent_window.as_ref()).await {
-                    if let Some(path) = file.path() {
-                        if fs::write(&path, &content).is_ok() {
-                            let _ = sender.lock().unwrap().try_send(Some(path));
-                            return;
-                        }
-                    }
+                if let Ok(file) = dialog.save_future(parent_window.as_ref()).await
+                    && let Some(path) = file.path()
+                    && fs::write(&path, &content).is_ok()
+                {
+                    let _ = sender.lock().unwrap().try_send(Some(path));
+                    return;
                 }
                 let _ = sender.lock().unwrap().try_send(None);
             }

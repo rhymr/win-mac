@@ -1,8 +1,8 @@
 //! Context menus, keyboard shortcuts, and every file-mutating operation
 //! (New/Cut/Copy/Paste/Rename/Delete/drag-move) for the file tree. Kept
-//! separate from file_tree.rs (which owns the tree's rendering/data model)
-//! since this is the half of `FileTree` that keeps growing.
-use crate::workspace::file_tree::FileTree;
+//! separate from tree.rs (which owns the tree's rendering/data model) since
+//! this is the half of `FileTree` that keeps growing.
+use super::tree::FileTree;
 use gtk::gdk;
 use gtk::glib;
 use gtk::prelude::*;
@@ -60,12 +60,12 @@ mod hint {
 fn anchor_below(popover: &Popover, hbox: &GtkBox, frame: &gtk::Frame) {
     let width = hbox.width().max(1);
     let height = hbox.height().max(1);
-    let (x, y) = hbox
-        .translate_coordinates(frame, 0.0, 0.0)
-        .unwrap_or((0.0, 0.0));
+    let origin = hbox
+        .compute_point(frame, &gtk::graphene::Point::new(0.0, 0.0))
+        .unwrap_or_else(|| gtk::graphene::Point::new(0.0, 0.0));
     popover.set_pointing_to(Some(&gdk::Rectangle::new(
-        x as i32,
-        y as i32 + height,
+        origin.x() as i32,
+        origin.y() as i32 + height,
         width,
         1,
     )));
@@ -373,7 +373,7 @@ impl FileTree {
         let prefill = if path.is_dir() {
             current_name
         } else {
-            crate::workspace::file_tree::strip_txt_extension(&current_name).to_string()
+            super::tree::strip_txt_extension(&current_name).to_string()
         };
 
         let entry = Entry::new();
@@ -430,32 +430,34 @@ impl FileTree {
 
     fn commit_rename(&self, old_path: PathBuf, new_name: String) {
         let new_name = new_name.trim();
-        if !new_name.is_empty() && !new_name.contains('/') && !new_name.contains('\\') {
-            if let Some(parent) = old_path.parent() {
-                // No extension typed for a file → assume .txt, matching what
-                // the tree display and rename prefill both hide.
-                let final_name = if !old_path.is_dir() && !new_name.contains('.') {
-                    format!("{new_name}.txt")
-                } else {
-                    new_name.to_string()
-                };
-                let new_path = parent.join(&final_name);
-                if new_path != old_path {
-                    match fs::rename(&old_path, &new_path) {
-                        Ok(()) => {
-                            if let Some(workspace) = self.workspace.borrow().as_ref() {
-                                workspace.rename_path(&old_path, &new_path);
-                            }
-
-                            let mut collapsed = self.collapsed.borrow_mut();
-                            if collapsed.remove(&old_path) {
-                                collapsed.insert(new_path);
-                            }
-                            drop(collapsed);
-                            self.stage_git();
+        if !new_name.is_empty()
+            && !new_name.contains('/')
+            && !new_name.contains('\\')
+            && let Some(parent) = old_path.parent()
+        {
+            // No extension typed for a file → assume .txt, matching what
+            // the tree display and rename prefill both hide.
+            let final_name = if !old_path.is_dir() && !new_name.contains('.') {
+                format!("{new_name}.txt")
+            } else {
+                new_name.to_string()
+            };
+            let new_path = parent.join(&final_name);
+            if new_path != old_path {
+                match fs::rename(&old_path, &new_path) {
+                    Ok(()) => {
+                        if let Some(workspace) = self.workspace.borrow().as_ref() {
+                            workspace.rename_path(&old_path, &new_path);
                         }
-                        Err(e) => eprintln!("Failed to rename {old_path:?} to {new_path:?}: {e}"),
+
+                        let mut collapsed = self.collapsed.borrow_mut();
+                        if collapsed.remove(&old_path) {
+                            collapsed.insert(new_path);
+                        }
+                        drop(collapsed);
+                        self.stage_git();
                     }
+                    Err(e) => eprintln!("Failed to rename {old_path:?} to {new_path:?}: {e}"),
                 }
             }
         }
@@ -650,7 +652,7 @@ impl FileTree {
     /// Stage every change in the workspace (a no-op if it isn't a git repo).
     fn stage_git(&self) {
         if let Some(root) = self.root_path.borrow().clone() {
-            crate::tools::git_ops::stage_all_changes(&root);
+            crate::git::ops::stage_all_changes(&root);
         }
     }
 }

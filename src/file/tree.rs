@@ -1,5 +1,5 @@
-use crate::tools::git_ops::GitFileStatus;
-use crate::workspace::workspace::Workspace;
+use crate::git::ops::GitFileStatus;
+use crate::workspace::Workspace;
 use gtk::gdk;
 use gtk::pango;
 use gtk::prelude::*;
@@ -19,11 +19,11 @@ const INDENT_PX: i32 = 20;
 
 /// The tree's rendering/data model. Context menus, keyboard shortcuts, and
 /// every file-mutating operation (new/rename/cut/copy/paste/delete/move)
-/// live in a second `impl FileTree` block in file_tree_menu.rs, which is
+/// live in a second `impl FileTree` block in tree_menu.rs, which is
 /// why several fields below are `pub(crate)` rather than private.
 #[derive(Clone)]
 pub struct FileTree {
-    // pub(crate): popovers (file_tree_menu.rs) parent to this rather than to
+    // pub(crate): popovers (tree_menu.rs) parent to this rather than to
     // a row's hbox, so a context menu's contents sit outside the `.file-list`
     // CSS subtree entirely — otherwise its unscoped `row:hover *` / `& label`
     // rules bleed into the popover and repaint menu items with row colors.
@@ -49,6 +49,12 @@ pub struct FileTree {
     // avoids re-decoding the SVG per row.
     folder_icon: Option<gdk::Paintable>,
     file_icon: Option<gdk::Paintable>,
+}
+
+impl Default for FileTree {
+    fn default() -> Self {
+        Self::new()
+    }
 }
 
 impl FileTree {
@@ -115,7 +121,7 @@ impl FileTree {
             file_icon: Image::from_resource("/org/gtk_rs/rhymr/icons/note-active.svg").paintable(),
         };
 
-        // F2/Delete/Cut/Copy/Paste for the selected row (see file_tree_menu.rs)
+        // F2/Delete/Cut/Copy/Paste for the selected row (see tree_menu.rs)
         file_tree.setup_keyboard_shortcuts();
 
         file_tree
@@ -135,15 +141,14 @@ impl FileTree {
         workspace
             .notebook
             .connect_switch_page(move |_, _, page_num| {
-                if let Some(workspace) = file_tree_for_sync.workspace.borrow().as_ref() {
-                    if let Some(path) = workspace
+                if let Some(workspace) = file_tree_for_sync.workspace.borrow().as_ref()
+                    && let Some(path) = workspace
                         .open_files
                         .borrow()
                         .get(page_num as usize)
                         .cloned()
-                    {
-                        file_tree_for_sync.select_path(&path);
-                    }
+                {
+                    file_tree_for_sync.select_path(&path);
                 }
             });
     }
@@ -171,7 +176,7 @@ impl FileTree {
         };
 
         let mut git_statuses = if root.join(".git").is_dir() {
-            crate::tools::git_ops::GitController::new(&root).file_statuses()
+            crate::git::ops::GitController::new(&root).file_statuses()
         } else {
             HashMap::new()
         };
@@ -227,10 +232,10 @@ impl FileTree {
         // borrow across that call (as an `if let` scrutinee would, via
         // temporary lifetime extension) panics with "already borrowed".
         let index = self.entries.borrow().iter().position(|(p, _)| p == path);
-        if let Some(index) = index {
-            if let Some(row) = self.file_list.row_at_index(index as i32) {
-                self.file_list.select_row(Some(&row));
-            }
+        if let Some(index) = index
+            && let Some(row) = self.file_list.row_at_index(index as i32)
+        {
+            self.file_list.select_row(Some(&row));
         }
     }
 
@@ -325,15 +330,13 @@ impl FileTree {
             label
         };
 
-        if is_root {
-            if let Some(path_str) = path.to_str() {
-                let path_label = Label::new(Some(path_str));
-                path_label.set_css_classes(&["dir-path"]);
-                path_label.set_hexpand(true);
-                path_label.set_halign(Align::End);
-                path_label.set_ellipsize(pango::EllipsizeMode::Start);
-                hbox.append(&path_label);
-            }
+        if is_root && let Some(path_str) = path.to_str() {
+            let path_label = Label::new(Some(path_str));
+            path_label.set_css_classes(&["dir-path"]);
+            path_label.set_hexpand(true);
+            path_label.set_halign(Align::End);
+            path_label.set_ellipsize(pango::EllipsizeMode::Start);
+            hbox.append(&path_label);
         }
 
         // Left click on a directory (including the root) toggles it collapsed/expanded

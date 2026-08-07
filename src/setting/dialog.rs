@@ -1,5 +1,5 @@
-use crate::utils::settings::Settings;
-use crate::workspace::workspace_controller::WorkspaceController;
+use super::Settings;
+use crate::workspace::controller::WorkspaceController;
 use gtk::prelude::*;
 use gtk::{
     Align, Application, Box as GtkBox, Button, CheckButton, Label, ListBox, ListBoxRow,

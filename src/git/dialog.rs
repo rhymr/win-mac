@@ -1,5 +1,5 @@
-use crate::tools::git_ops::{GitController, GitFileStatus};
-use crate::workspace::workspace_controller::WorkspaceController;
+use super::ops::{GitController, GitFileStatus};
+use crate::workspace::controller::WorkspaceController;
 use futures_util::StreamExt;
 use gtk::prelude::*;
 use gtk::{
@@ -422,9 +422,9 @@ fn show_message_dialog(parent: &gtk::Window, title: &str, message: &str) {
 }
 
 fn refresh_file_tree(controller: &Rc<WorkspaceController>) {
-    if let Some(workspace) = controller.get_workspace() {
-        if let Some(ref file_tree) = workspace.file_tree {
-            file_tree.refresh();
-        }
+    if let Some(workspace) = controller.get_workspace()
+        && let Some(ref file_tree) = workspace.file_tree
+    {
+        file_tree.refresh();
     }
 }

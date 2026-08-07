@@ -1,6 +1,9 @@
-use crate::rhyme::RhymeHighlight;
-use crate::utils::settings::Settings;
-use crate::workspace::completion::WordCompletionProvider;
+pub mod completion;
+pub mod stat;
+
+use crate::rhyme::highlight::RhymeHighlight;
+use crate::setting::Settings;
+use completion::WordCompletionProvider;
 use gtk::prelude::*;
 use gtk::{Frame, ScrolledWindow};
 use sourceview5::GutterRendererText;
@@ -25,9 +28,15 @@ pub struct TextEditor {
     rhyme_highlight: RefCell<Option<RhymeHighlight>>,
 }
 
+impl Default for TextEditor {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl TextEditor {
     pub fn new() -> Self {
-        let settings = crate::utils::settings::Settings::load();
+        let settings = crate::setting::Settings::load();
 
         // Create the source buffer and view
         let buffer = SourceBuffer::new(None);
@@ -83,10 +92,10 @@ impl TextEditor {
                     eprintln!("Auto-save failed for {path:?}: {e}");
                     return;
                 }
-                if crate::utils::settings::Settings::load().git_autostage {
-                    if let Some(root) = find_git_root(&path) {
-                        crate::tools::git_ops::stage_all_changes(&root);
-                    }
+                if crate::setting::Settings::load().git_autostage
+                    && let Some(root) = find_git_root(&path)
+                {
+                    crate::git::ops::stage_all_changes(&root);
                 }
             });
         });
@@ -184,7 +193,7 @@ impl TextEditor {
         let mut rhyme_slot = self.rhyme_highlight.borrow_mut();
         match (rhyme_slot.is_some(), settings.rhyme_highlighting) {
             (false, true) => {
-                *rhyme_slot = Some(crate::rhyme::attach(&self.buffer));
+                *rhyme_slot = Some(crate::rhyme::highlight::attach(&self.buffer));
             }
             (true, false) => {
                 if let Some(handle) = rhyme_slot.take() {
@@ -255,7 +264,7 @@ fn create_syllable_renderer(buffer: &SourceBuffer) -> GutterRendererText {
 
             let line = buffer_clone.text(&iter, &end_iter, false);
             if !line.trim().is_empty() {
-                let syllables = crate::utils::text_stats::count_syllables(&line);
+                let syllables = crate::editor::stat::count_syllables(&line);
                 renderer.set_text(&syllables.to_string());
             } else {
                 renderer.set_text("");

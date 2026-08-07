@@ -1,5 +1,5 @@
-use crate::utils::file_ops::FileOps;
-use crate::workspace::workspace::Workspace;
+use crate::file::ops::FileOps;
+use crate::workspace::Workspace;
 use gtk::Window;
 use gtk::prelude::*;
 use std::cell::RefCell;
@@ -7,10 +7,20 @@ use std::fs;
 use std::path::PathBuf;
 use std::rc::Rc;
 
+/// Boxed word-count callback — factored out purely to keep the field
+/// declaration under clippy's type-complexity threshold.
+type WordCountListener = RefCell<Option<Box<dyn Fn(u32)>>>;
+
 pub struct WorkspaceController {
     pub(crate) workspace: RefCell<Option<Rc<Workspace>>>,
     root_path: RefCell<Option<PathBuf>>,
-    word_count_listener: RefCell<Option<Box<dyn Fn(u32)>>>,
+    word_count_listener: WordCountListener,
+}
+
+impl Default for WorkspaceController {
+    fn default() -> Self {
+        Self::new()
+    }
 }
 
 impl WorkspaceController {
@@ -35,7 +45,7 @@ impl WorkspaceController {
             .and_then(|workspace| workspace.get_current_buffer())
             .map(|(buffer, _)| {
                 let text = buffer.text(&buffer.start_iter(), &buffer.end_iter(), false);
-                crate::utils::text_stats::count_words(&text)
+                crate::editor::stat::count_words(&text)
             })
             .unwrap_or(0);
 
@@ -45,7 +55,7 @@ impl WorkspaceController {
     }
 
     /// Live-apply `settings` to every open tab, if a workspace is loaded.
-    pub fn apply_settings(&self, settings: &crate::utils::settings::Settings) {
+    pub fn apply_settings(&self, settings: &crate::setting::Settings) {
         if let Some(workspace) = self.get_workspace() {
             workspace.apply_settings_to_open_tabs(settings);
         }
@@ -63,10 +73,10 @@ impl WorkspaceController {
     /// Point the file tree at the loaded workspace folder.
     pub fn set_root_path(&self, path: PathBuf) {
         self.root_path.replace(Some(path.clone()));
-        if let Some(workspace) = self.get_workspace() {
-            if let Some(ref file_tree) = workspace.file_tree {
-                file_tree.set_root_path(path);
-            }
+        if let Some(workspace) = self.get_workspace()
+            && let Some(ref file_tree) = workspace.file_tree
+        {
+            file_tree.set_root_path(path);
         }
     }
 
@@ -134,8 +144,8 @@ impl WorkspaceController {
     }
 
     fn stage_git(&self, root: &std::path::Path) {
-        if crate::utils::settings::Settings::load().git_autostage {
-            crate::tools::git_ops::stage_all_changes(root);
+        if crate::setting::Settings::load().git_autostage {
+            crate::git::ops::stage_all_changes(root);
         }
     }
 
@@ -147,15 +157,15 @@ impl WorkspaceController {
                 workspace.remove_tab(0);
             }
         }
-        crate::utils::recent_workspaces::record_recent_workspace(&path);
+        crate::workspace::recent::record_recent_workspace(&path);
         self.set_root_path(path);
     }
 
     pub fn handle_open_file(&self, window: &Window) {
-        if let Some((path, content)) = FileOps::open_file(Some(window.clone())) {
-            if let Some(workspace) = self.workspace.borrow().as_ref() {
-                workspace.add_new_tab(&path, &content);
-            }
+        if let Some((path, content)) = FileOps::open_file(Some(window.clone()))
+            && let Some(workspace) = self.workspace.borrow().as_ref()
+        {
+            workspace.add_new_tab(&path, &content);
         }
     }
 
@@ -226,10 +236,10 @@ impl WorkspaceController {
     }
 
     pub fn handle_close_tab(&self, _window: &Window) {
-        if let Some(workspace) = self.get_workspace() {
-            if let Some(current_page) = workspace.notebook.current_page() {
-                workspace.remove_tab(current_page as usize);
-            }
+        if let Some(workspace) = self.get_workspace()
+            && let Some(current_page) = workspace.notebook.current_page()
+        {
+            workspace.remove_tab(current_page as usize);
         }
     }
 }

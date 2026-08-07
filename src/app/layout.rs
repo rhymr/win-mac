@@ -1,7 +1,7 @@
-use crate::ui::rhyme_search::RhymeSearch;
-use crate::workspace::file_tree::FileTree;
-use crate::workspace::workspace::Workspace;
-use crate::workspace::workspace_controller::WorkspaceController;
+use crate::file::tree::FileTree;
+use crate::rhyme::search::RhymeSearch;
+use crate::workspace::Workspace;
+use crate::workspace::controller::WorkspaceController;
 use gtk::prelude::*;
 use gtk::{Application, Box as GtkBox, Label, Orientation, Paned};
 use std::cell::Cell;
@@ -26,7 +26,7 @@ pub fn build_ui(app: &Application) -> (gtk::ApplicationWindow, Rc<WorkspaceContr
 
     main_window.set_child(Some(&main_layout));
 
-    crate::ui::menu::setup_menu(app, workspace_controller.clone());
+    crate::app::menu::setup_menu(app, workspace_controller.clone());
 
     main_window.present();
 

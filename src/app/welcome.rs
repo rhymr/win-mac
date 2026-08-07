@@ -1,6 +1,6 @@
-use crate::tools::apple_notes::fetch_apple_notes;
-use crate::utils::recent_workspaces::load_recent_workspaces;
-use crate::workspace::workspace_manager::WorkspaceManager;
+use crate::platform::fetch_apple_notes;
+use crate::workspace::manager::WorkspaceManager;
+use crate::workspace::recent::load_recent_workspaces;
 use gio::prelude::FileExt;
 use gtk::prelude::*;
 use gtk::{
@@ -93,7 +93,7 @@ where
         .build();
     let app_for_settings = app.clone();
     settings_btn.connect_clicked(move |_| {
-        crate::ui::settings_dialog::show_settings_dialog(&app_for_settings, None);
+        crate::setting::dialog::show_settings_dialog(&app_for_settings, None);
     });
 
     sidebar.append(&brand_box);
@@ -250,11 +250,11 @@ where
             Some(&window_for_open),
             gio::Cancellable::NONE,
             move |result| {
-                if let Ok(folder) = result {
-                    if let Some(path) = folder.path() {
-                        dlg_inner.close();
-                        cb_inner(path);
-                    }
+                if let Ok(folder) = result
+                    && let Some(path) = folder.path()
+                {
+                    dlg_inner.close();
+                    cb_inner(path);
                 }
             },
         );
@@ -368,7 +368,7 @@ fn show_project_menu<F>(
     let projects_list_for_remove = projects_list.clone();
     remove_item.connect_clicked(move |_| {
         popover_ref.popdown();
-        crate::utils::recent_workspaces::remove_recent_workspace(&path_for_remove);
+        crate::workspace::recent::remove_recent_workspace(&path_for_remove);
         projects_list_for_remove.remove(&row_for_remove);
 
         if projects_list_for_remove.row_at_index(0).is_none() {
@@ -514,11 +514,11 @@ where
             Some(&dialog_for_browse),
             gio::Cancellable::NONE,
             move |result| {
-                if let Ok(folder) = result {
-                    if let Some(path) = folder.path() {
-                        entry.set_text(&path.to_string_lossy());
-                        update_preview();
-                    }
+                if let Ok(folder) = result
+                    && let Some(path) = folder.path()
+                {
+                    entry.set_text(&path.to_string_lossy());
+                    update_preview();
                 }
             },
         );
@@ -546,15 +546,15 @@ where
         if let Ok(manager) =
             WorkspaceManager::init_workspace(&workspace_path, git_toggle.is_active())
         {
-            if notes_toggle.is_active() {
-                if let Ok(notes) = fetch_apple_notes() {
-                    for (title, body) in notes {
-                        let note_path = manager.root_path.join(format!("{title}.txt"));
-                        let _ = std::fs::write(note_path, body);
-                    }
-                    let git = crate::tools::git_ops::GitController::new(&manager.root_path);
-                    let _ = git.commit_all("Initial import from Apple Notes");
+            if notes_toggle.is_active()
+                && let Ok(notes) = fetch_apple_notes()
+            {
+                for (title, body) in notes {
+                    let note_path = manager.root_path.join(format!("{title}.txt"));
+                    let _ = std::fs::write(note_path, body);
                 }
+                let git = crate::git::ops::GitController::new(&manager.root_path);
+                let _ = git.commit_all("Initial import from Apple Notes");
             }
             dialog_for_create.close();
             // Also close the welcome window behind this dialog — otherwise

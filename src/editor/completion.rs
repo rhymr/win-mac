@@ -130,10 +130,10 @@ mod imp {
             proposal: &CompletionProposal,
             cell: &CompletionCell,
         ) {
-            if cell.column() == CompletionColumn::TypedText {
-                if let Some(word) = proposal.downcast_ref::<super::WordProposal>() {
-                    cell.set_text(Some(&word.word()));
-                }
+            if cell.column() == CompletionColumn::TypedText
+                && let Some(word) = proposal.downcast_ref::<super::WordProposal>()
+            {
+                cell.set_text(Some(&word.word()));
             }
         }
 

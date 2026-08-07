@@ -23,13 +23,13 @@ fn main() {
         let scss_path = css_file.replace("{1}", "scss");
         let css_path = css_file.replace("{1}", "css");
 
-        if Path::new(&scss_path).exists() {
-            if let Ok(css_output) = grass::from_path(&scss_path, &Options::default()) {
-                if let Some(parent) = Path::new(&css_path).parent() {
-                    let _ = fs::create_dir_all(parent);
-                }
-                let _ = fs::write(css_path, css_output);
+        if Path::new(&scss_path).exists()
+            && let Ok(css_output) = grass::from_path(&scss_path, &Options::default())
+        {
+            if let Some(parent) = Path::new(&css_path).parent() {
+                let _ = fs::create_dir_all(parent);
             }
+            let _ = fs::write(css_path, css_output);
         }
     }
 

@@ -1,7 +1,7 @@
 use gio::Resource;
 use gtk::prelude::*;
 use gtk::{gio, glib};
-use rhymr_rs::{css, ui::layout};
+use rhymr_rs::{app, css};
 
 pub const APP_ID: &str = "org.gtk_rs.Rhymr";
 
@@ -38,10 +38,10 @@ fn main() -> glib::ExitCode {
 
         // Show the workspace picker first; the main editor layout is only
         // built once a workspace has actually been chosen.
-        rhymr_rs::ui::welcome::show_welcome_dialog(app, move |workspace_path| {
+        rhymr_rs::app::welcome::show_welcome_dialog(app, move |workspace_path| {
             println!("Loaded workspace at: {:?}", workspace_path);
-            rhymr_rs::utils::recent_workspaces::record_recent_workspace(&workspace_path);
-            let (_window, controller) = layout::build_ui(&app_for_workspace);
+            rhymr_rs::workspace::recent::record_recent_workspace(&workspace_path);
+            let (_window, controller) = app::layout::build_ui(&app_for_workspace);
             controller.set_root_path(workspace_path);
         });
     });

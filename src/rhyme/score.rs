@@ -402,7 +402,7 @@ impl Default for Thresholds {
 /// intentionally closing on an unstressed "-y"/"-ly" syllable) costs more
 /// than showing one the writer didn't intend. The caller is expected to
 /// apply its own precision gate on top of this — see `MERGE_THRESHOLD` in
-/// `rhyme_highlight.rs`.
+/// `rhyme/highlight.rs`.
 pub fn find_rhymes(a: &[Syllable], b: &[Syllable], thresholds: &Thresholds) -> Vec<RhymeSpan> {
     if a.is_empty() || b.is_empty() {
         return Vec::new();

@@ -18,7 +18,7 @@ use std::sync::OnceLock;
 const LINE_WINDOW: usize = 3;
 
 /// How long to wait after the last keystroke before recomputing rhyme
-/// groups — mirrors the autosave debounce in `text_editor.rs`.
+/// groups — mirrors the autosave debounce in `editor/mod.rs`.
 const RHYME_DEBOUNCE: std::time::Duration = std::time::Duration::from_millis(400);
 
 const CMUDICT_TXT: &str = include_str!("../../assets/dictionary/cmudict.dict");
@@ -645,7 +645,7 @@ fn recompute(buffer: &SourceBuffer, tags: &[TextTag]) {
     }
 
     let lines = build_lines(&text, &word_spans);
-    let stop_at_blank_line = crate::utils::settings::Settings::load().rhyme_stop_at_blank_line;
+    let stop_at_blank_line = crate::setting::Settings::load().rhyme_stop_at_blank_line;
     let scored_groups = score_lines(&lines, stop_at_blank_line);
 
     let all_groups = fallback_groups

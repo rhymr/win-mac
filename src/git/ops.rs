@@ -227,19 +227,18 @@ impl GitController {
 fn remote_callbacks<'a>() -> git2::RemoteCallbacks<'a> {
     let mut callbacks = git2::RemoteCallbacks::new();
     callbacks.credentials(|url, username_from_url, allowed_types| {
-        if allowed_types.contains(git2::CredentialType::SSH_KEY) {
-            if let Some(username) = username_from_url {
-                if let Ok(cred) = git2::Cred::ssh_key_from_agent(username) {
-                    return Ok(cred);
-                }
-            }
+        if allowed_types.contains(git2::CredentialType::SSH_KEY)
+            && let Some(username) = username_from_url
+            && let Ok(cred) = git2::Cred::ssh_key_from_agent(username)
+        {
+            return Ok(cred);
         }
         if allowed_types.contains(git2::CredentialType::USER_PASS_PLAINTEXT) {
             let config = git2::Config::open_default().or_else(|_| git2::Config::new());
-            if let Ok(config) = config {
-                if let Ok(cred) = git2::Cred::credential_helper(&config, url, username_from_url) {
-                    return Ok(cred);
-                }
+            if let Ok(config) = config
+                && let Ok(cred) = git2::Cred::credential_helper(&config, url, username_from_url)
+            {
+                return Ok(cred);
             }
         }
         git2::Cred::default()

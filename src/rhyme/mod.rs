@@ -1,4 +1,3 @@
-mod highlight;
-mod score;
-
-pub use highlight::{RhymeHighlight, attach};
+pub mod highlight;
+pub mod score;
+pub mod search;
